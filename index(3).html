@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Manutenção — Campo Incorporadora</title>
+<style>
+  :root {
+    --petroleo: #094752;
+    --petroleo-mid: #0d5e6e;
+    --petroleo-light: #e8f0f2;
+    --verde: #34D986;
+    --verde-soft: #d0f5e5;
+    --text: #1a2e33;
+    --text-muted: #5a7a82;
+    --bg: #f4f7f8;
+    --card: #ffffff;
+    --border: #dce8eb;
+    --ok: #22c55e; --ok-bg: #dcfce7;
+    --warn: #f59e0b; --warn-bg: #fef3c7;
+    --late: #ef4444; --late-bg: #fee2e2;
+    --radius: 10px;
+    --shadow: 0 1px 4px rgba(9,71,82,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+
+  /* HEADER */
+  header { background: var(--petroleo); padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(9,71,82,0.25); }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--verde); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .header-title { color: #fff; font-size: 17px; font-weight: 700; }
+  .header-sub { color: rgba(255,255,255,0.55); font-size: 12px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .search-box { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 7px; padding: 7px 12px; color: #fff; font-size: 13px; outline: none; width: 200px; }
+  .search-box::placeholder { color: rgba(255,255,255,0.4); }
+  .search-box:focus { background: rgba(255,255,255,0.15); border-color: var(--verde); }
+
+  /* TABS */
+  .tab-nav { background: var(--petroleo-mid); display: flex; padding: 0 28px; overflow-x: auto; border-bottom: 2px solid rgba(255,255,255,0.08); }
+  .tab-btn { color: rgba(255,255,255,0.55); background: none; border: none; padding: 12px 16px; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: color .15s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: rgba(255,255,255,0.85); }
+  .tab-btn.active { color: var(--verde); border-bottom-color: var(--verde); }
+  .tab-count { background: rgba(255,255,255,0.12); border-radius: 20px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+  .tab-btn.active .tab-count { background: rgba(52,217,134,0.2); color: var(--verde); }
+
+  /* LAYOUT */
+  main { padding: 24px 28px; max-width: 1400px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* LOADING */
+  .loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: var(--text-muted); gap: 12px; font-size: 14px; }
+  .spinner { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--petroleo); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* STATS */
+  .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px 16px; box-shadow: var(--shadow); }
+  .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-value { font-size: 26px; font-weight: 700; color: var(--petroleo); margin: 2px 0; line-height: 1; }
+  .stat-value.ok { color: var(--ok); }
+  .stat-value.warn { color: var(--warn); }
+  .stat-value.late { color: var(--late); }
+  .stat-sub { font-size: 11px; color: var(--text-muted); }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+  .section-title { font-size: 15px; font-weight: 700; color: var(--petroleo); display: flex; align-items: center; gap: 8px; }
+  .section-title::before { content: ''; display: inline-block; width: 3px; height: 16px; background: var(--verde); border-radius: 2px; }
+  .btn-add { background: var(--verde); color: var(--petroleo); border: none; border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity .15s; }
+  .btn-add:hover { opacity: .85; }
+
+  /* FILTER PILLS */
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .pill { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text-muted); transition: all .15s; }
+  .pill:hover, .pill.active { background: var(--petroleo); border-color: var(--petroleo); color: #fff; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; background: var(--card); }
+  thead th { background: var(--petroleo); color: rgba(255,255,255,0.85); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 12px; text-align: left; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--petroleo-light); }
+  td { padding: 9px 12px; font-size: 13px; vertical-align: middle; }
+  tr.hidden-row { display: none; }
+
+  /* BADGES */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge::before { content: '●'; font-size: 8px; }
+  .badge.ok { background: var(--ok-bg); color: #15803d; }
+  .badge.warn { background: var(--warn-bg); color: #92400e; }
+  .badge.late { background: var(--late-bg); color: #b91c1c; }
+  .badge.neutral { background: var(--petroleo-light); color: var(--petroleo); }
+
+  /* ACTION BTNS */
+  .btn-edit { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; color: var(--text-muted); transition: all .15s; }
+  .btn-edit:hover { background: var(--petroleo); color: #fff; border-color: var(--petroleo); }
+  .btn-del { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer; color: var(--text-muted); transition: all .15s; margin-left: 4px; }
+  .btn-del:hover { background: var(--late); color: #fff; border-color: var(--late); }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(9,71,82,0.45); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card); border-radius: 14px; width: 100%; max-width: 540px; box-shadow: 0 8px 32px rgba(9,71,82,0.2); overflow: hidden; }
+  .modal-header { background: var(--petroleo); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { color: #fff; font-size: 15px; font-weight: 700; }
+  .modal-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 20px; cursor: pointer; line-height: 1; padding: 0 4px; }
+  .modal-close:hover { color: #fff; }
+  .modal-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+  .form-input, .form-select, .form-textarea { width: 100%; padding: 8px 11px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; color: var(--text); background: var(--bg); outline: none; transition: border-color .15s; font-family: inherit; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--petroleo); background: #fff; }
+  .form-textarea { resize: vertical; min-height: 70px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; background: var(--bg); }
+  .btn-cancel { background: var(--card); border: 1px solid var(--border); border-radius: 7px; padding: 8px 16px; font-size: 13px; cursor: pointer; color: var(--text-muted); }
+  .btn-save { background: var(--petroleo); color: #fff; border: none; border-radius: 7px; padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; }
+  .btn-save:hover { background: var(--petroleo-mid); }
+  .btn-save:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--petroleo); color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: 0 4px 16px rgba(9,71,82,0.3); z-index: 300; transform: translateY(80px); opacity: 0; transition: all .3s; display: flex; align-items: center; gap: 8px; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.ok-toast { background: #15803d; }
+  .toast.err-toast { background: #b91c1c; }
+
+  /* RELATÓRIO */
+  .rel-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
+  .rel-title { font-size: 18px; font-weight: 700; color: var(--petroleo); }
+  .rel-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .btn-print { background: var(--petroleo); color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 7px; }
+  .rel-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .rel-kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); text-align: center; }
+  .rel-kpi .kv { font-size: 30px; font-weight: 700; line-height: 1; margin: 4px 0; }
+  .rel-kpi .kl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
+  .rel-block { margin-bottom: 28px; }
+  .rel-block-title { font-size: 13px; font-weight: 700; color: var(--petroleo); text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 0; border-bottom: 2px solid var(--petroleo); margin-bottom: 14px; }
+  .rel-list { display: flex; flex-direction: column; gap: 8px; }
+  .rel-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; box-shadow: var(--shadow); }
+  .rel-item.late { border-left: 3px solid var(--late); }
+  .rel-item.warn { border-left: 3px solid var(--warn); }
+  .rel-item.ok { border-left: 3px solid var(--ok); }
+  .rel-item-name { font-weight: 600; font-size: 13px; color: var(--petroleo); }
+  .rel-item-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .rel-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); }
+
+  footer { text-align: center; padding: 20px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 40px; }
+
+  @media (max-width: 640px) {
+    header { padding: 12px 16px; }
+    main { padding: 14px; }
+    .tab-nav { padding: 0 12px; }
+    .search-box { width: 130px; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+  @media print {
+    header, .tab-nav, .btn-print, .btn-add, footer { display: none !important; }
+    .section { display: none !important; }
+    #sec-relatorio { display: block !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-icon">🔧</div>
+    <div>
+      <div class="header-title">Painel de Manutenção</div>
+      <div class="header-sub">ADM · Buritis · Controladoria — Campo Incorporadora</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <input class="search-box" type="search" id="globalSearch" placeholder="🔍 Buscar…" oninput="applySearch()">
+  </div>
+</header>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('predial')" id="tab-predial">🏢 Predial <span class="tab-count" id="cnt-predial">…</span></button>
+  <button class="tab-btn" onclick="showTab('arcond')" id="tab-arcond">❄️ Ar-Condicionado <span class="tab-count" id="cnt-arcond">…</span></button>
+  <button class="tab-btn" onclick="showTab('nobreaks')" id="tab-nobreaks">🔋 Nobreaks <span class="tab-count" id="cnt-nobreaks">…</span></button>
+  <button class="tab-btn" onclick="showTab('extintores')" id="tab-extintores">🧯 Extintores <span class="tab-count" id="cnt-extintores">…</span></button>
+  <button class="tab-btn" onclick="showTab('impressoras')" id="tab-impressoras">🖨️ Impressoras <span class="tab-count" id="cnt-impressoras">…</span></button>
+  <button class="tab-btn" onclick="showTab('relatorio')" id="tab-relatorio">📋 Relatório</button>
+</div>
+
+<main>
+  <div class="section active" id="sec-predial">
+    <div class="stats-bar" id="stats-predial"></div>
+    <div class="section-header">
+      <div class="section-title">Manutenção Predial — ADM, Buritis &amp; Controladoria</div>
+      <button class="btn-add" onclick="openModal('predial')">＋ Novo item</button>
+    </div>
+    <div class="filter-row" id="filter-predial">
+      <span class="pill active" onclick="setFilter('predial',this,'')">Todos</span>
+      <span class="pill" onclick="setFilter('predial',this,'ADM')">ADM</span>
+      <span class="pill" onclick="setFilter('predial',this,'Buritis')">Buritis</span>
+      <span class="pill" onclick="setFilter('predial',this,'Geral')">Geral</span>
+    </div>
+    <div id="list-predial"><div class="loading"><div class="spinner"></div> Carregando…</div></div>
+  </div>
+
+  <div class="section" id="sec-arcond">
+    <div class="stats-bar" id="stats-arcond"></div>
+    <div class="section-header">
+      <div class="section-title">Ar-Condicionado — ADM &amp; Buritis</div>
+      <button class="btn-add" onclick="openModal('arcond')">＋ Novo equipamento</button>
+    </div>
+    <div class="filter-row" id="filter-arcond">
+      <span class="pill active" onclick="setFilter('arcond',this,'')">Todos</span>
+      <span class="pill" onclick="setFilter('arcond',this,'ADM')">ADM</span>
+      <span class="pill" onclick="setFilter('arcond',this,'ADM/Apto')">Apto</span>
+      <span class="pill" onclick="setFilter('arcond',this,'Buritis')">Buritis</span>
+    </div>
+    <div id="list-arcond"><div class="loading"><div class="spinner"></div> Carregando…</div></div>
+  </div>
+
+  <div class="section" id="sec-nobreaks">
+    <div class="stats-bar" id="stats-nobreaks"></div>
+    <div class="section-header">
+      <div class="section-title">Nobreaks — ADM &amp; Buritis</div>
+      <button class="btn-add" onclick="openModal('nobreaks')">＋ Novo nobreak</button>
+    </div>
+    <div class="filter-row" id="filter-nobreaks">
+      <span class="pill active" onclick="setFilter('nobreaks',this,'')">Todos</span>
+      <span class="pill" onclick="setFilter('nobreaks',this,'ADM')">ADM</span>
+      <span class="pill" onclick="setFilter('nobreaks',this,'Buritis')">Buritis</span>
+      <span class="pill" onclick="setFilter('nobreaks',this,'Controladoria')">Controladoria</span>
+    </div>
+    <div id="list-nobreaks"><div class="loading"><div class="spinner"></div> Carregando…</div></div>
+  </div>
+
+  <div class="section" id="sec-extintores">
+    <div class="stats-bar" id="stats-extintores"></div>
+    <div class="section-header">
+      <div class="section-title">Extintores — ADM &amp; Buritis</div>
+      <button class="btn-add" onclick="openModal('extintores')">＋ Novo extintor</button>
+    </div>
+    <div id="list-extintores"><div class="loading"><div class="spinner"></div> Carregando…</div></div>
+  </div>
+
+  <div class="section" id="sec-impressoras">
+    <div class="stats-bar" id="stats-impressoras"></div>
+    <div class="section-header">
+      <div class="section-title">Impressoras — ADM &amp; Buritis</div>
+      <button class="btn-add" onclick="openModal('impressoras')">＋ Nova impressora</button>
+    </div>
+    <div class="filter-row" id="filter-impressoras">
+      <span class="pill active" onclick="setFilter('impressoras',this,'')">Todos</span>
+      <span class="pill" onclick="setFilter('impressoras',this,'ADM')">ADM</span>
+      <span class="pill" onclick="setFilter('impressoras',this,'Buritis')">Buritis</span>
+      <span class="pill" onclick="setFilter('impressoras',this,'BCV')">BCV</span>
+    </div>
+    <div id="list-impressoras"><div class="loading"><div class="spinner"></div> Carregando…</div></div>
+  </div>
+
+  <div class="section" id="sec-relatorio">
+    <div class="rel-header">
+      <div>
+        <div class="rel-title">Relatório de Manutenção</div>
+        <div class="rel-subtitle" id="rel-data"></div>
+      </div>
+      <button class="btn-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
+    </div>
+    <div class="rel-kpis" id="rel-kpis"><div class="loading"><div class="spinner"></div> Carregando…</div></div>
+    <div class="rel-block">
+      <div class="rel-block-title">⚠️ Pendências — Itens Vencidos ou a Vencer</div>
+      <div class="rel-list" id="rel-pendencias"></div>
+    </div>
+    <div class="rel-block">
+      <div class="rel-block-title">📊 Resumo por Categoria</div>
+      <div id="rel-resumo"></div>
+    </div>
+  </div>
+</main>
+
+<footer>Campo Incorporadora · Setor de Manutenção · ADM &amp; Buritis</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Novo item</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" id="btnSave" onclick="saveRecord()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
+const AT_TOKEN = 'patFVOsjBq3L8x4lN.871dad234f17871828ac6f63d68e7c7fc5f97ebdd5515207aba0e1eff3421c3e';
+const BASE_ID  = 'app3pZJmRaLlJ2CMc';
+
+const TABLES = {
+  predial:    { id: 'tbl9PyGXNBoOy7MKG', name: 'Predial' },
+  arcond:     { id: 'tbliogp1iCOLlJXmV', name: 'Ar-Condicionado' },
+  nobreaks:   { id: 'tblmX5sQdc0xDaGCG', name: 'Nobreaks' },
+  extintores: { id: 'tbld9Fhr0Mxh7BxtB', name: 'Extintores' },
+  impressoras:{ id: 'tbldL456bmLcyAISx', name: 'Impressoras' },
+};
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+const cache = {};
+const filters = { predial:'', arcond:'', nobreaks:'', impressoras:'' };
+let currentTab = 'predial';
+let editingId = null;
+let editingTable = null;
+
+// ─────────────────────────────────────────────
+// AIRTABLE API
+// ─────────────────────────────────────────────
+async function atFetch(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: { 'Authorization': `Bearer ${AT_TOKEN}`, 'Content-Type': 'application/json' }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(`https://api.airtable.com/v0/${BASE_ID}/${path}`, opts);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function loadTable(key) {
+  const tbl = TABLES[key];
+  let records = [], offset = null;
+  do {
+    const url = `${tbl.id}?pageSize=100${offset ? '&offset='+offset : ''}`;
+    const data = await atFetch(url);
+    records = records.concat(data.records);
+    offset = data.offset || null;
+  } while (offset);
+  cache[key] = records;
+  return records;
+}
+
+async function createRecord(key, fields) {
+  const tbl = TABLES[key];
+  return atFetch(tbl.id, 'POST', { records: [{ fields }] });
+}
+
+async function updateRecord(key, id, fields) {
+  const tbl = TABLES[key];
+  return atFetch(`${tbl.id}/${id}`, 'PATCH', { fields });
+}
+
+async function deleteRecord(key, id) {
+  const tbl = TABLES[key];
+  return atFetch(`${tbl.id}/${id}`, 'DELETE');
+}
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function badge(st, label) {
+  const cls = st==='late'?'late':st==='warn'?'warn':st==='ok'?'ok':'neutral';
+  return `<span class="badge ${cls}">${label||st}</span>`;
+}
+
+function statusFromStr(s) {
+  if (!s) return 'neutral';
+  const u = s.toUpperCase();
+  if (u.includes('HORA') || u.includes('PENDENTE') || u.includes('ATEN')) return 'warn';
+  if (u.includes('VENCID') || u.includes('DESCARTAR')) return 'late';
+  if (u === 'OK' || u.includes('EM DIA') || u.includes('REALIZADO')) return 'ok';
+  return 'neutral';
+}
+
+function statusDate(d) {
+  if (!d) return 'neutral';
+  const diff = (new Date(d) - new Date()) / 86400000;
+  if (diff < 0) return 'late';
+  if (diff <= 45) return 'warn';
+  return 'ok';
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const [y,m,dd] = d.split('-');
+  return `${dd}/${m}/${y}`;
+}
+
+function f(rec, name) {
+  return rec.fields[name] || '';
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─────────────────────────────────────────────
+// RENDER — PREDIAL
+// ─────────────────────────────────────────────
+function renderPredial(records) {
+  const ok   = records.filter(r=>f(r,'Status')==='OK').length;
+  const pend = records.filter(r=>statusFromStr(f(r,'Status'))==='warn').length;
+  const nd   = records.filter(r=>f(r,'Status')==='Sem data').length;
+  document.getElementById('stats-predial').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${records.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Em dia</div><div class="stat-value ok">${ok}</div></div>
+    <div class="stat-card"><div class="stat-label">Pendente</div><div class="stat-value warn">${pend}</div></div>
+    <div class="stat-card"><div class="stat-label">Sem data</div><div class="stat-value" style="color:var(--text-muted)">${nd}</div></div>`;
+  document.getElementById('cnt-predial').textContent = records.length;
+
+  const q = (document.getElementById('globalSearch').value||'').toLowerCase();
+  const filt = filters.predial;
+  const rows = records.map(r => {
+    const st = statusFromStr(f(r,'Status'));
+    const lbl = f(r,'Status')||'—';
+    const txt = [f(r,'Local'),f(r,'Descrição'),f(r,'Prestador'),f(r,'Unidade')].join(' ').toLowerCase();
+    const hide = (filt && f(r,'Unidade')!==filt) || (q && !txt.includes(q));
+    return `<tr class="data-row${hide?' hidden-row':''}" data-id="${r.id}" data-txt="${escHtml(txt)}">
+      <td><strong>${escHtml(f(r,'Local'))}</strong><br><small style="color:var(--text-muted)">${escHtml(f(r,'Unidade'))}</small></td>
+      <td style="font-size:12px">${escHtml(f(r,'Descrição'))}</td>
+      <td><span class="badge neutral">${escHtml(f(r,'Intervalo')||'—')}</span></td>
+      <td>${fmtDate(f(r,'Última Manutenção'))}</td>
+      <td>${fmtDate(f(r,'Próxima Manutenção'))}</td>
+      <td>${escHtml(f(r,'Prestador'))}</td>
+      <td>${badge(st, lbl)}<br><button class="btn-edit" style="margin-top:4px" onclick="openModal('predial','${r.id}')">✏️ Editar</button><button class="btn-del" onclick="delRecord('predial','${r.id}')">🗑️</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('list-predial').innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Local</th><th>Descrição</th><th>Intervalo</th><th>Última Manut.</th><th>Próxima Manut.</th><th>Prestador</th><th>Status / Ação</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — AR-CONDICIONADO
+// ─────────────────────────────────────────────
+function renderArcond(records) {
+  const ok   = records.filter(r=>statusDate(f(r,'Próxima Manutenção'))==='ok').length;
+  const warn = records.filter(r=>statusDate(f(r,'Próxima Manutenção'))==='warn').length;
+  const late = records.filter(r=>statusDate(f(r,'Próxima Manutenção'))==='late').length;
+  document.getElementById('stats-arcond').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${records.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Em dia</div><div class="stat-value ok">${ok}</div></div>
+    <div class="stat-card"><div class="stat-label">A vencer (≤45d)</div><div class="stat-value warn">${warn}</div></div>
+    <div class="stat-card"><div class="stat-label">Vencidos</div><div class="stat-value late">${late}</div></div>`;
+  document.getElementById('cnt-arcond').textContent = records.length;
+
+  const q = (document.getElementById('globalSearch').value||'').toLowerCase();
+  const filt = filters.arcond;
+  const rows = records.map(r => {
+    const st = statusDate(f(r,'Próxima Manutenção'));
+    const lbl = st==='late'?'Vencido':st==='warn'?'A vencer':'Em dia';
+    const txt = [f(r,'Local'),f(r,'Marca'),f(r,'Unidade'),f(r,'BTUs')].join(' ').toLowerCase();
+    const hide = (filt && f(r,'Unidade')!==filt) || (q && !txt.includes(q));
+    const obs = f(r,'Observação');
+    return `<tr class="data-row${hide?' hidden-row':''}" data-id="${r.id}" data-txt="${escHtml(txt)}">
+      <td><strong>${escHtml(f(r,'Local'))}</strong>${obs?`<br><small style="color:var(--late)">${escHtml(obs)}</small>`:''}</td>
+      <td><span class="badge neutral">${escHtml(f(r,'Unidade'))}</span></td>
+      <td>${escHtml(f(r,'Marca'))}</td>
+      <td>${escHtml(f(r,'BTUs'))}</td>
+      <td>${escHtml(f(r,'Última Manutenção')||'—')}</td>
+      <td>${fmtDate(f(r,'Próxima Manutenção'))}</td>
+      <td>${badge(st,lbl)}<br><button class="btn-edit" style="margin-top:4px" onclick="openModal('arcond','${r.id}')">✏️ Editar</button><button class="btn-del" onclick="delRecord('arcond','${r.id}')">🗑️</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('list-arcond').innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Local</th><th>Unidade</th><th>Marca</th><th>BTUs</th><th>Última Manut.</th><th>Próxima Manut.</th><th>Status / Ação</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — NOBREAKS
+// ─────────────────────────────────────────────
+function renderNobreaks(records) {
+  const ok   = records.filter(r=>f(r,'Status')==='OK').length;
+  const warn = records.filter(r=>f(r,'Status')==='Atenção').length;
+  const late = records.filter(r=>f(r,'Status')==='Descartar').length;
+  document.getElementById('stats-nobreaks').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${records.length}</div></div>
+    <div class="stat-card"><div class="stat-label">OK</div><div class="stat-value ok">${ok}</div></div>
+    <div class="stat-card"><div class="stat-label">Atenção</div><div class="stat-value warn">${warn}</div></div>
+    <div class="stat-card"><div class="stat-label">Descartar</div><div class="stat-value late">${late}</div></div>`;
+  document.getElementById('cnt-nobreaks').textContent = records.length;
+
+  const q = (document.getElementById('globalSearch').value||'').toLowerCase();
+  const filt = filters.nobreaks;
+  const rows = records.map(r => {
+    const st = statusFromStr(f(r,'Status'));
+    const txt = [f(r,'ID'),f(r,'Sala'),f(r,'Equipamento'),f(r,'Unidade'),f(r,'Observação')].join(' ').toLowerCase();
+    const hide = (filt && f(r,'Unidade')!==filt) || (q && !txt.includes(q));
+    return `<tr class="data-row${hide?' hidden-row':''}" data-id="${r.id}" data-txt="${escHtml(txt)}">
+      <td><strong>${escHtml(f(r,'ID'))}</strong></td>
+      <td><span class="badge neutral">${escHtml(f(r,'Unidade'))}</span></td>
+      <td>${escHtml(f(r,'Sala'))}</td>
+      <td>${escHtml(f(r,'Equipamento'))}</td>
+      <td>${fmtDate(f(r,'Última Manutenção'))}</td>
+      <td>${fmtDate(f(r,'Próximo Teste'))}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${escHtml(f(r,'Observação')||'—')}</td>
+      <td>${badge(st, f(r,'Status')||'—')}<br><button class="btn-edit" style="margin-top:4px" onclick="openModal('nobreaks','${r.id}')">✏️ Editar</button><button class="btn-del" onclick="delRecord('nobreaks','${r.id}')">🗑️</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('list-nobreaks').innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>ID</th><th>Unidade</th><th>Sala</th><th>Equipamento</th><th>Última Manut.</th><th>Próx. Teste</th><th>Observação</th><th>Status / Ação</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — EXTINTORES
+// ─────────────────────────────────────────────
+function renderExtintores(records) {
+  document.getElementById('stats-extintores').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${records.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Status geral</div><div class="stat-value ok">OK</div><div class="stat-sub">Todos em dia</div></div>`;
+  document.getElementById('cnt-extintores').textContent = records.length;
+
+  const q = (document.getElementById('globalSearch').value||'').toLowerCase();
+  const rows = records.map(r => {
+    const txt = [f(r,'Local'),f(r,'Tipo'),f(r,'Uso')].join(' ').toLowerCase();
+    const hide = q && !txt.includes(q);
+    return `<tr class="data-row${hide?' hidden-row':''}" data-id="${r.id}" data-txt="${escHtml(txt)}">
+      <td><strong>${escHtml(f(r,'Local'))}</strong></td>
+      <td>${escHtml(f(r,'Tipo'))}</td>
+      <td style="font-size:12px">${escHtml(f(r,'Uso'))}</td>
+      <td>${escHtml(f(r,'Quantidade'))}</td>
+      <td><span class="badge neutral">${escHtml(f(r,'Próx. Manutenção')||'—')}</span></td>
+      <td>${fmtDate(f(r,'Última Troca'))}</td>
+      <td>${fmtDate(f(r,'Próxima Troca'))}</td>
+      <td>${escHtml(f(r,'Valor Unitário'))}</td>
+      <td>${badge('ok','OK')}<br><button class="btn-edit" style="margin-top:4px" onclick="openModal('extintores','${r.id}')">✏️ Editar</button><button class="btn-del" onclick="delRecord('extintores','${r.id}')">🗑️</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('list-extintores').innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Local</th><th>Tipo</th><th>Uso</th><th>Qtd</th><th>Próx. Manut.</th><th>Última Troca</th><th>Próxima Troca</th><th>Valor</th><th>Status / Ação</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — IMPRESSORAS
+// ─────────────────────────────────────────────
+function renderImpressoras(records) {
+  const loc = records.filter(r=>f(r,'Locada')==='Sim').length;
+  document.getElementById('stats-impressoras').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">${records.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Locadas</div><div class="stat-value ok">${loc}</div></div>
+    <div class="stat-card"><div class="stat-label">Próprias</div><div class="stat-value" style="color:var(--petroleo)">${records.length-loc}</div></div>`;
+  document.getElementById('cnt-impressoras').textContent = records.length;
+
+  const q = (document.getElementById('globalSearch').value||'').toLowerCase();
+  const filt = filters.impressoras;
+  const rows = records.map(r => {
+    const txt = [f(r,'Sala'),f(r,'Modelo'),f(r,'Marca'),f(r,'Unidade')].join(' ').toLowerCase();
+    const hide = (filt && f(r,'Unidade')!==filt) || (q && !txt.includes(q));
+    const locBadge = f(r,'Locada')==='Sim' ? badge('ok','Locada') : `<span class="badge neutral">Própria</span>`;
+    return `<tr class="data-row${hide?' hidden-row':''}" data-id="${r.id}" data-txt="${escHtml(txt)}">
+      <td><strong>${escHtml(f(r,'Sala'))}</strong></td>
+      <td><span class="badge neutral">${escHtml(f(r,'Unidade'))}</span></td>
+      <td style="font-size:12px">${escHtml(f(r,'Modelo'))}</td>
+      <td>${escHtml(f(r,'Marca'))}</td>
+      <td>${locBadge}</td>
+      <td>${escHtml(f(r,'Empresa')||'—')}</td>
+      <td>${escHtml(f(r,'Valor Locação')||'—')}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${escHtml(f(r,'Observação')||'—')}<br><button class="btn-edit" style="margin-top:4px" onclick="openModal('impressoras','${r.id}')">✏️ Editar</button><button class="btn-del" onclick="delRecord('impressoras','${r.id}')">🗑️</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('list-impressoras').innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Sala</th><th>Unidade</th><th>Modelo</th><th>Marca</th><th>Locada</th><th>Empresa</th><th>Valor</th><th>Observação / Ação</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+// ─────────────────────────────────────────────
+// RENDER — RELATÓRIO
+// ─────────────────────────────────────────────
+function renderRelatorio() {
+  document.getElementById('rel-data').textContent =
+    'Campo Incorporadora · ' + new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+
+  const pred = cache.predial||[];
+  const arc  = cache.arcond||[];
+  const nb   = cache.nobreaks||[];
+  const ext  = cache.extintores||[];
+  const imp  = cache.impressoras||[];
+  const total = pred.length+arc.length+nb.length+ext.length+imp.length;
+
+  const predPend = pred.filter(r=>statusFromStr(f(r,'Status'))==='warn').length;
+  const arcLate  = arc.filter(r=>statusDate(f(r,'Próxima Manutenção'))==='late').length;
+  const arcWarn  = arc.filter(r=>statusDate(f(r,'Próxima Manutenção'))==='warn').length;
+  const nbWarn   = nb.filter(r=>f(r,'Status')==='Atenção'||f(r,'Status')==='Descartar').length;
+  const totalPend = predPend+arcLate+arcWarn+nbWarn;
+
+  document.getElementById('rel-kpis').innerHTML = `
+    <div class="rel-kpi"><div class="kl">Total de Itens</div><div class="kv" style="color:var(--petroleo)">${total}</div></div>
+    <div class="rel-kpi"><div class="kl">Em Dia</div><div class="kv" style="color:var(--ok)">${total-totalPend}</div></div>
+    <div class="rel-kpi"><div class="kl">Pendências</div><div class="kv" style="color:var(--warn)">${totalPend}</div></div>
+    <div class="rel-kpi"><div class="kl">Ar-Cond. Vencidos</div><div class="kv" style="color:var(--late)">${arcLate}</div></div>
+    <div class="rel-kpi"><div class="kl">Nobreaks Atenção</div><div class="kv" style="color:var(--warn)">${nbWarn}</div></div>`;
+
+  const pends = [];
+  pred.filter(r=>statusFromStr(f(r,'Status'))==='warn').forEach(r=>
+    pends.push({cat:'Predial',st:'warn',nome:f(r,'Local'),desc:f(r,'Descrição'),data:fmtDate(f(r,'Próxima Manutenção'))}));
+  arc.filter(r=>statusDate(f(r,'Próxima Manutenção'))!=='ok').forEach(r=>{
+    const st=statusDate(f(r,'Próxima Manutenção'));
+    pends.push({cat:'Ar-Condicionado',st,nome:f(r,'Local'),desc:f(r,'Marca')+' · '+f(r,'BTUs'),data:fmtDate(f(r,'Próxima Manutenção'))});
+  });
+  nb.filter(r=>f(r,'Status')==='Atenção'||f(r,'Status')==='Descartar').forEach(r=>
+    pends.push({cat:'Nobreak',st:f(r,'Status')==='Descartar'?'late':'warn',nome:f(r,'ID')+' — '+f(r,'Sala'),desc:f(r,'Observação')||'',data:'—'}));
+
+  document.getElementById('rel-pendencias').innerHTML = pends.length===0
+    ? '<div class="rel-empty">✅ Nenhuma pendência encontrada!</div>'
+    : pends.map(p=>`<div class="rel-item ${p.st}">
+        <div><div class="rel-item-name">${escHtml(p.nome)} <span class="badge neutral" style="font-size:10px">${p.cat}</span></div>
+        <div class="rel-item-desc">${escHtml(p.desc)}</div></div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-size:12px;font-weight:600">${p.data}</div>${badge(p.st,p.st==='late'?'Vencido':'A vencer')}</div>
+      </div>`).join('');
+
+  const cats = [
+    {n:'🏢 Predial', t:pred.length, ok:pred.filter(r=>f(r,'Status')==='OK').length, p:predPend},
+    {n:'❄️ Ar-Condicionado', t:arc.length, ok:arc.filter(r=>statusDate(f(r,'Próxima Manutenção'))==='ok').length, p:arcLate+arcWarn},
+    {n:'🔋 Nobreaks', t:nb.length, ok:nb.filter(r=>f(r,'Status')==='OK').length, p:nbWarn},
+    {n:'🧯 Extintores', t:ext.length, ok:ext.length, p:0},
+    {n:'🖨️ Impressoras', t:imp.length, ok:imp.filter(r=>f(r,'Locada')==='Sim').length, p:0},
+  ];
+  document.getElementById('rel-resumo').innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Categoria</th><th>Total</th><th>Em Dia / OK</th><th>Pendências</th></tr></thead>
+    <tbody>${cats.map(c=>`<tr><td><strong>${c.n}</strong></td><td>${c.t}</td>
+      <td>${badge('ok',String(c.ok))}</td>
+      <td>${c.p>0?badge('warn',String(c.p)):badge('ok','0')}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// ─────────────────────────────────────────────
+// MODAL — FORM DEFINITIONS
+// ─────────────────────────────────────────────
+const FORMS = {
+  predial: (rec) => {
+    const fl = rec?.fields || {};
+    return `
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Local *</label><input class="form-input" id="f_Local" value="${escHtml(fl['Local']||'')}" required></div>
+        <div class="form-group"><label class="form-label">Unidade</label><select class="form-select" id="f_Unidade">
+          ${['ADM','Buritis','Geral'].map(o=>`<option${fl['Unidade']===o?' selected':''}>${o}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Intervalo</label><input class="form-input" id="f_Intervalo" value="${escHtml(fl['Intervalo']||'')}"></div>
+        <div class="form-group"><label class="form-label">Prestador</label><input class="form-input" id="f_Prestador" value="${escHtml(fl['Prestador']||'')}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Descrição</label><textarea class="form-textarea" id="f_Descrição">${escHtml(fl['Descrição']||'')}</textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Última Manutenção</label><input class="form-input" type="date" id="f_Última Manutenção" value="${fl['Última Manutenção']||''}"></div>
+        <div class="form-group"><label class="form-label">Próxima Manutenção</label><input class="form-input" type="date" id="f_Próxima Manutenção" value="${fl['Próxima Manutenção']||''}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Valor</label><input class="form-input" id="f_Valor" value="${escHtml(fl['Valor']||'')}"></div>
+        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f_Status">
+          ${['OK','Pendente','Está na hora','Sem data'].map(o=>`<option${fl['Status']===o?' selected':''}>${o}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Observação</label><textarea class="form-textarea" id="f_Observação">${escHtml(fl['Observação']||'')}</textarea></div>`;
+  },
+  arcond: (rec) => {
+    const fl = rec?.fields || {};
+    return `
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Local *</label><input class="form-input" id="f_Local" value="${escHtml(fl['Local']||'')}" required></div>
+        <div class="form-group"><label class="form-label">Unidade</label><select class="form-select" id="f_Unidade">
+          ${['ADM','ADM/Apto','Buritis'].map(o=>`<option${fl['Unidade']===o?' selected':''}>${o}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Marca</label><input class="form-input" id="f_Marca" value="${escHtml(fl['Marca']||'')}"></div>
+        <div class="form-group"><label class="form-label">BTUs</label><input class="form-input" id="f_BTUs" value="${escHtml(fl['BTUs']||'')}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Última Manutenção</label><input class="form-input" id="f_Última Manutenção" value="${escHtml(fl['Última Manutenção']||'')}"></div>
+        <div class="form-group"><label class="form-label">Próxima Manutenção</label><input class="form-input" type="date" id="f_Próxima Manutenção" value="${fl['Próxima Manutenção']||''}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f_Status">
+        ${['Em dia','A vencer','Vencido'].map(o=>`<option${fl['Status']===o?' selected':''}>${o}</option>`).join('')}
+      </select></div>
+      <div class="form-group"><label class="form-label">Observação</label><textarea class="form-textarea" id="f_Observação">${escHtml(fl['Observação']||'')}</textarea></div>`;
+  },
+  nobreaks: (rec) => {
+    const fl = rec?.fields || {};
+    return `
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">ID *</label><input class="form-input" id="f_ID" value="${escHtml(fl['ID']||'')}" required></div>
+        <div class="form-group"><label class="form-label">Unidade</label><select class="form-select" id="f_Unidade">
+          ${['ADM','Buritis','Controladoria'].map(o=>`<option${fl['Unidade']===o?' selected':''}>${o}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Sala</label><input class="form-input" id="f_Sala" value="${escHtml(fl['Sala']||'')}"></div>
+        <div class="form-group"><label class="form-label">Equipamento</label><input class="form-input" id="f_Equipamento" value="${escHtml(fl['Equipamento']||'')}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Última Manutenção</label><input class="form-input" type="date" id="f_Última Manutenção" value="${fl['Última Manutenção']||''}"></div>
+        <div class="form-group"><label class="form-label">Próximo Teste</label><input class="form-input" type="date" id="f_Próximo Teste" value="${fl['Próximo Teste']||''}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f_Status">
+        ${['OK','Atenção','Descartar','Reserva'].map(o=>`<option${fl['Status']===o?' selected':''}>${o}</option>`).join('')}
+      </select></div>
+      <div class="form-group"><label class="form-label">Observação</label><textarea class="form-textarea" id="f_Observação">${escHtml(fl['Observação']||'')}</textarea></div>`;
+  },
+  extintores: (rec) => {
+    const fl = rec?.fields || {};
+    return `
+      <div class="form-group"><label class="form-label">Local *</label><input class="form-input" id="f_Local" value="${escHtml(fl['Local']||'')}" required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tipo</label><input class="form-input" id="f_Tipo" value="${escHtml(fl['Tipo']||'')}"></div>
+        <div class="form-group"><label class="form-label">Quantidade</label><input class="form-input" id="f_Quantidade" value="${escHtml(fl['Quantidade']||'')}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Uso</label><input class="form-input" id="f_Uso" value="${escHtml(fl['Uso']||'')}"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Última Troca</label><input class="form-input" type="date" id="f_Última Troca" value="${fl['Última Troca']||''}"></div>
+        <div class="form-group"><label class="form-label">Próxima Troca</label><input class="form-input" type="date" id="f_Próxima Troca" value="${fl['Próxima Troca']||''}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Próx. Manutenção</label><input class="form-input" id="f_Próx. Manutenção" value="${escHtml(fl['Próx. Manutenção']||'')}"></div>
+        <div class="form-group"><label class="form-label">Valor Unitário</label><input class="form-input" id="f_Valor Unitário" value="${escHtml(fl['Valor Unitário']||'')}"></div>
+      </div>`;
+  },
+  impressoras: (rec) => {
+    const fl = rec?.fields || {};
+    return `
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Sala *</label><input class="form-input" id="f_Sala" value="${escHtml(fl['Sala']||'')}" required></div>
+        <div class="form-group"><label class="form-label">Unidade</label><select class="form-select" id="f_Unidade">
+          ${['ADM','Buritis','BCV'].map(o=>`<option${fl['Unidade']===o?' selected':''}>${o}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Modelo</label><input class="form-input" id="f_Modelo" value="${escHtml(fl['Modelo']||'')}"></div>
+        <div class="form-group"><label class="form-label">Marca</label><input class="form-input" id="f_Marca" value="${escHtml(fl['Marca']||'')}"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Locada</label><select class="form-select" id="f_Locada">
+          ${['Sim','Não'].map(o=>`<option${fl['Locada']===o?' selected':''}>${o}</option>`).join('')}
+        </select></div>
+        <div class="form-group"><label class="form-label">Empresa</label><input class="form-input" id="f_Empresa" value="${escHtml(fl['Empresa']||'')}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Valor Locação</label><input class="form-input" id="f_Valor Locação" value="${escHtml(fl['Valor Locação']||'')}"></div>
+      <div class="form-group"><label class="form-label">Observação</label><textarea class="form-textarea" id="f_Observação">${escHtml(fl['Observação']||'')}</textarea></div>`;
+  },
+};
+
+// Field names per table (to collect from form)
+const FIELDS = {
+  predial:    ['Local','Unidade','Intervalo','Prestador','Descrição','Última Manutenção','Próxima Manutenção','Valor','Status','Observação'],
+  arcond:     ['Local','Unidade','Marca','BTUs','Última Manutenção','Próxima Manutenção','Status','Observação'],
+  nobreaks:   ['ID','Unidade','Sala','Equipamento','Última Manutenção','Próximo Teste','Status','Observação'],
+  extintores: ['Local','Tipo','Uso','Quantidade','Última Troca','Próxima Troca','Próx. Manutenção','Valor Unitário'],
+  impressoras:['Sala','Unidade','Modelo','Marca','Locada','Empresa','Valor Locação','Observação'],
+};
+
+// Date fields
+const DATE_FIELDS = new Set(['Última Manutenção','Próxima Manutenção','Última Troca','Próxima Troca','Próximo Teste']);
+
+// ─────────────────────────────────────────────
+// MODAL LOGIC
+// ─────────────────────────────────────────────
+function openModal(table, id=null) {
+  editingTable = table;
+  editingId = id;
+  const rec = id ? (cache[table]||[]).find(r=>r.id===id) : null;
+  const titles = {predial:'item predial',arcond:'ar-condicionado',nobreaks:'nobreak',extintores:'extintor',impressoras:'impressora'};
+  document.getElementById('modalTitle').textContent = (id?'Editar ':'Novo ') + titles[table];
+  document.getElementById('modalBody').innerHTML = FORMS[table](rec);
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  editingId = null; editingTable = null;
+}
+
+function closeModalOutside(e) {
+  if (e.target.id==='modalOverlay') closeModal();
+}
+
+async function saveRecord() {
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+  try {
+    const fields = {};
+    for (const name of FIELDS[editingTable]) {
+      const el = document.getElementById('f_'+name);
+      if (!el) continue;
+      let val = el.value.trim();
+      if (!val) continue;
+      if (DATE_FIELDS.has(name)) fields[name] = val; // already YYYY-MM-DD
+      else fields[name] = val;
+    }
+    if (editingId) {
+      await updateRecord(editingTable, editingId, fields);
+      toast('✅ Atualizado com sucesso!', 'ok-toast');
+    } else {
+      await createRecord(editingTable, fields);
+      toast('✅ Criado com sucesso!', 'ok-toast');
+    }
+    closeModal();
+    const records = await loadTable(editingTable);
+    renderTable(editingTable, records);
+  } catch(e) {
+    toast('❌ Erro ao salvar: ' + e.message, 'err-toast');
+  }
+  btn.disabled = false; btn.textContent = 'Salvar';
+}
+
+async function delRecord(table, id) {
+  if (!confirm('Confirma a exclusão deste registro?')) return;
+  try {
+    await deleteRecord(table, id);
+    toast('🗑️ Registro excluído', 'ok-toast');
+    const records = await loadTable(table);
+    renderTable(table, records);
+  } catch(e) {
+    toast('❌ Erro ao excluir', 'err-toast');
+  }
+}
+
+// ─────────────────────────────────────────────
+// FILTER / SEARCH
+// ─────────────────────────────────────────────
+function setFilter(table, el, val) {
+  document.querySelectorAll(`#filter-${table} .pill`).forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  filters[table] = val;
+  renderTable(table, cache[table]||[]);
+}
+
+function applySearch() {
+  renderTable(currentTab, cache[currentTab]||[]);
+}
+
+// ─────────────────────────────────────────────
+// ROUTING
+// ─────────────────────────────────────────────
+function renderTable(key, records) {
+  const fns = { predial:renderPredial, arcond:renderArcond, nobreaks:renderNobreaks, extintores:renderExtintores, impressoras:renderImpressoras };
+  if (fns[key]) fns[key](records);
+}
+
+async function showTab(name) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  currentTab = name;
+
+  if (name === 'relatorio') {
+    // load all if not cached
+    const tabs = ['predial','arcond','nobreaks','extintores','impressoras'];
+    await Promise.all(tabs.filter(t=>!cache[t]).map(t=>loadTable(t)));
+    renderRelatorio();
+    return;
+  }
+  if (!cache[name]) {
+    const records = await loadTable(name);
+    renderTable(name, records);
+  }
+}
+
+// ─────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────
+function toast(msg, cls='ok-toast') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast '+cls+' show';
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+(async () => {
+  const records = await loadTable('predial');
+  renderPredial(records);
+})();
+</script>
+</body>
+</html>
