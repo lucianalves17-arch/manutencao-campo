@@ -280,6 +280,43 @@
       </div>
       <button class="btn-print" onclick="window.print()">🖨️ Imprimir / PDF</button>
     </div>
+
+    <!-- FILTROS -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;box-shadow:var(--shadow)">
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px">🔍 Filtros</div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-weight:600">UNIDADE</div>
+          <div class="filter-row rel-filter-unidade" style="margin-bottom:0">
+            <span class="pill active" onclick="setRelFiltro('unidade','',this)">Todas</span>
+            <span class="pill" onclick="setRelFiltro('unidade','ADM',this)">ADM</span>
+            <span class="pill" onclick="setRelFiltro('unidade','Buritis',this)">Buritis</span>
+            <span class="pill" onclick="setRelFiltro('unidade','Geral',this)">Geral</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-weight:600">STATUS</div>
+          <div class="filter-row rel-filter-status" style="margin-bottom:0">
+            <span class="pill active" onclick="setRelFiltro('status','',this)">Todos</span>
+            <span class="pill" onclick="setRelFiltro('status','ok',this)">✅ Em dia</span>
+            <span class="pill" onclick="setRelFiltro('status','pendente',this)">⚠️ Pendente</span>
+            <span class="pill" onclick="setRelFiltro('status','vencido',this)">❌ Vencido</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-weight:600">CATEGORIA</div>
+          <div class="filter-row rel-filter-categoria" style="margin-bottom:0">
+            <span class="pill active" onclick="setRelFiltro('categoria','',this)">Todas</span>
+            <span class="pill" onclick="setRelFiltro('categoria','Predial',this)">🏢 Predial</span>
+            <span class="pill" onclick="setRelFiltro('categoria','Ar-Condicionado',this)">❄️ Ar-Cond.</span>
+            <span class="pill" onclick="setRelFiltro('categoria','Nobreaks',this)">🔋 Nobreaks</span>
+            <span class="pill" onclick="setRelFiltro('categoria','Extintores',this)">🧯 Extintores</span>
+            <span class="pill" onclick="setRelFiltro('categoria','Impressoras',this)">🖨️ Impressoras</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="rel-kpis" id="rel-kpis"><div class="loading"><div class="spinner"></div> Carregando…</div></div>
     <div class="rel-block">
       <div class="rel-block-title">⚠️ Pendências — Itens Vencidos ou a Vencer</div>
@@ -640,61 +677,102 @@ function renderImpressoras(records) {
 // ─────────────────────────────────────────────
 // RENDER — RELATÓRIO
 // ─────────────────────────────────────────────
+const relFiltros = { unidade: '', status: '', categoria: '' };
+
 function renderRelatorio() {
   document.getElementById('rel-data').textContent =
     'Campo Incorporadora · ' + new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  renderRelatorioFiltrado();
+}
+
+function setRelFiltro(tipo, val, el) {
+  relFiltros[tipo] = val;
+  document.querySelectorAll(`.rel-filter-${tipo} .pill`).forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  renderRelatorioFiltrado();
+}
+
+function renderRelatorioFiltrado() {
+  const {unidade, status, categoria} = relFiltros;
 
   const pred = cache.predial||[];
   const arc  = cache.arcond||[];
   const nb   = cache.nobreaks||[];
   const ext  = cache.extintores||[];
   const imp  = cache.impressoras||[];
-  const total = pred.length+arc.length+nb.length+ext.length+imp.length;
 
-  const predPend = pred.filter(r=>statusFromStr(f(r,'Status'))==='warn').length;
-  const arcLate  = arc.filter(r=>statusDate(f(r,'Próxima Manutenção'))==='late').length;
-  const arcWarn  = arc.filter(r=>statusDate(f(r,'Próxima Manutenção'))==='warn').length;
-  const nbWarn   = nb.filter(r=>f(r,'Status')==='Atenção'||f(r,'Status')==='Descartar').length;
-  const totalPend = predPend+arcLate+arcWarn+nbWarn;
+  // Build unified item list with category, unidade, status
+  let items = [];
+
+  pred.forEach(r => {
+    const st = statusFromStr(f(r,'Status'));
+    items.push({ cat:'Predial', catIcon:'🏢', unidade:f(r,'Unidade'), nome:f(r,'Local'), desc:f(r,'Descrição'), st, stLabel:f(r,'Status')||'—', data:fmtDate(f(r,'Próxima Manutenção')), prestador:f(r,'Prestador') });
+  });
+  arc.forEach(r => {
+    const st = statusDate(f(r,'Próxima Manutenção'));
+    const stLabel = st==='late'?'Vencido':st==='warn'?'A vencer':'Em dia';
+    items.push({ cat:'Ar-Condicionado', catIcon:'❄️', unidade:f(r,'Unidade'), nome:f(r,'Local'), desc:f(r,'Marca')+' · '+f(r,'BTUs'), st, stLabel, data:fmtDate(f(r,'Próxima Manutenção')), prestador:'—' });
+  });
+  nb.forEach(r => {
+    const st = statusFromStr(f(r,'Status'));
+    items.push({ cat:'Nobreaks', catIcon:'🔋', unidade:f(r,'Unidade'), nome:f(r,'ID')+' — '+f(r,'Sala'), desc:f(r,'Equipamento')+(f(r,'Observação')?' · '+f(r,'Observação'):''), st, stLabel:f(r,'Status')||'—', data:fmtDate(f(r,'Próximo Teste')), prestador:'—' });
+  });
+  ext.forEach(r => {
+    items.push({ cat:'Extintores', catIcon:'🧯', unidade:'Geral', nome:f(r,'Local'), desc:f(r,'Tipo')+' · '+f(r,'Quantidade'), st:'ok', stLabel:'OK', data:fmtDate(f(r,'Próxima Troca')), prestador:'Pacholski' });
+  });
+  imp.forEach(r => {
+    const st = f(r,'Locada')==='Sim'?'ok':'neutral';
+    items.push({ cat:'Impressoras', catIcon:'🖨️', unidade:f(r,'Unidade'), nome:f(r,'Sala')+' — '+f(r,'Modelo'), desc:f(r,'Marca')+(f(r,'Empresa')&&f(r,'Empresa')!=='—'?' · '+f(r,'Empresa'):''), st, stLabel:f(r,'Locada')==='Sim'?'Locada':'Própria', data:'—', prestador:f(r,'Empresa')||'—' });
+  });
+
+  // Apply filters
+  let filtered = items;
+  if (unidade) filtered = filtered.filter(i => i.unidade === unidade || (unidade==='Geral' && i.unidade==='Geral'));
+  if (categoria) filtered = filtered.filter(i => i.cat === categoria);
+  if (status === 'ok') filtered = filtered.filter(i => i.st === 'ok');
+  if (status === 'pendente') filtered = filtered.filter(i => i.st === 'warn' || i.st === 'late');
+  if (status === 'vencido') filtered = filtered.filter(i => i.st === 'late');
+
+  // KPIs
+  const total = filtered.length;
+  const okCount = filtered.filter(i=>i.st==='ok').length;
+  const pendCount = filtered.filter(i=>i.st==='warn').length;
+  const lateCount = filtered.filter(i=>i.st==='late').length;
 
   document.getElementById('rel-kpis').innerHTML = `
-    <div class="rel-kpi"><div class="kl">Total de Itens</div><div class="kv" style="color:var(--petroleo)">${total}</div></div>
-    <div class="rel-kpi"><div class="kl">Em Dia</div><div class="kv" style="color:var(--ok)">${total-totalPend}</div></div>
-    <div class="rel-kpi"><div class="kl">Pendências</div><div class="kv" style="color:var(--warn)">${totalPend}</div></div>
-    <div class="rel-kpi"><div class="kl">Ar-Cond. Vencidos</div><div class="kv" style="color:var(--late)">${arcLate}</div></div>
-    <div class="rel-kpi"><div class="kl">Nobreaks Atenção</div><div class="kv" style="color:var(--warn)">${nbWarn}</div></div>`;
+    <div class="rel-kpi"><div class="kl">Total filtrado</div><div class="kv" style="color:var(--petroleo)">${total}</div></div>
+    <div class="rel-kpi"><div class="kl">Em Dia / OK</div><div class="kv" style="color:var(--ok)">${okCount}</div></div>
+    <div class="rel-kpi"><div class="kl">A vencer</div><div class="kv" style="color:var(--warn)">${pendCount}</div></div>
+    <div class="rel-kpi"><div class="kl">Vencidos</div><div class="kv" style="color:var(--late)">${lateCount}</div></div>`;
 
-  const pends = [];
-  pred.filter(r=>statusFromStr(f(r,'Status'))==='warn').forEach(r=>
-    pends.push({cat:'Predial',st:'warn',nome:f(r,'Local'),desc:f(r,'Descrição'),data:fmtDate(f(r,'Próxima Manutenção'))}));
-  arc.filter(r=>statusDate(f(r,'Próxima Manutenção'))!=='ok').forEach(r=>{
-    const st=statusDate(f(r,'Próxima Manutenção'));
-    pends.push({cat:'Ar-Condicionado',st,nome:f(r,'Local'),desc:f(r,'Marca')+' · '+f(r,'BTUs'),data:fmtDate(f(r,'Próxima Manutenção'))});
-  });
-  nb.filter(r=>f(r,'Status')==='Atenção'||f(r,'Status')==='Descartar').forEach(r=>
-    pends.push({cat:'Nobreak',st:f(r,'Status')==='Descartar'?'late':'warn',nome:f(r,'ID')+' — '+f(r,'Sala'),desc:f(r,'Observação')||'',data:'—'}));
-
+  // Pendências
+  const pends = filtered.filter(i=>i.st==='warn'||i.st==='late');
   document.getElementById('rel-pendencias').innerHTML = pends.length===0
-    ? '<div class="rel-empty">✅ Nenhuma pendência encontrada!</div>'
+    ? '<div class="rel-empty">✅ Nenhuma pendência encontrada com os filtros aplicados!</div>'
     : pends.map(p=>`<div class="rel-item ${p.st}">
-        <div><div class="rel-item-name">${escHtml(p.nome)} <span class="badge neutral" style="font-size:10px">${p.cat}</span></div>
+        <div><div class="rel-item-name">${escHtml(p.nome)} <span class="badge neutral" style="font-size:10px">${p.catIcon} ${p.cat}</span></div>
         <div class="rel-item-desc">${escHtml(p.desc)}</div></div>
-        <div style="text-align:right;flex-shrink:0"><div style="font-size:12px;font-weight:600">${p.data}</div>${badge(p.st,p.st==='late'?'Vencido':'A vencer')}</div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-size:12px;font-weight:600">${p.data}</div>${badge(p.st,p.stLabel)}</div>
       </div>`).join('');
 
-  const cats = [
-    {n:'🏢 Predial', t:pred.length, ok:pred.filter(r=>f(r,'Status')==='OK').length, p:predPend},
-    {n:'❄️ Ar-Condicionado', t:arc.length, ok:arc.filter(r=>statusDate(f(r,'Próxima Manutenção'))==='ok').length, p:arcLate+arcWarn},
-    {n:'🔋 Nobreaks', t:nb.length, ok:nb.filter(r=>f(r,'Status')==='OK').length, p:nbWarn},
-    {n:'🧯 Extintores', t:ext.length, ok:ext.length, p:0},
-    {n:'🖨️ Impressoras', t:imp.length, ok:imp.filter(r=>f(r,'Locada')==='Sim').length, p:0},
-  ];
-  document.getElementById('rel-resumo').innerHTML = `<div class="table-wrap"><table>
-    <thead><tr><th>Categoria</th><th>Total</th><th>Em Dia / OK</th><th>Pendências</th></tr></thead>
-    <tbody>${cats.map(c=>`<tr><td><strong>${c.n}</strong></td><td>${c.t}</td>
-      <td>${badge('ok',String(c.ok))}</td>
-      <td>${c.p>0?badge('warn',String(c.p)):badge('ok','0')}</td></tr>`).join('')}
-    </tbody></table></div>`;
+  // Resumo por categoria
+  const cats = ['Predial','Ar-Condicionado','Nobreaks','Extintores','Impressoras'];
+  const icons = {Predial:'🏢','Ar-Condicionado':'❄️',Nobreaks:'🔋',Extintores:'🧯',Impressoras:'🖨️'};
+  const catRows = cats.map(c => {
+    const citems = filtered.filter(i=>i.cat===c);
+    if (!citems.length) return '';
+    const cok = citems.filter(i=>i.st==='ok').length;
+    const cp  = citems.filter(i=>i.st==='warn'||i.st==='late').length;
+    return `<tr><td><strong>${icons[c]} ${c}</strong></td><td>${citems.length}</td>
+      <td>${badge('ok',String(cok))}</td>
+      <td>${cp>0?badge('warn',String(cp)):badge('ok','0')}</td></tr>`;
+  }).filter(Boolean).join('');
+
+  document.getElementById('rel-resumo').innerHTML = catRows
+    ? `<div class="table-wrap"><table>
+        <thead><tr><th>Categoria</th><th>Total</th><th>Em Dia / OK</th><th>Pendências</th></tr></thead>
+        <tbody>${catRows}</tbody></table></div>`
+    : '<div class="rel-empty">Nenhum item encontrado com os filtros aplicados.</div>';
 }
 
 // ─────────────────────────────────────────────
