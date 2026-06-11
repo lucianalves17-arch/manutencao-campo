@@ -311,6 +311,7 @@ const TABLES = {
   nobreaks:   { id: 'tblmX5sQdc0xDaGCG', name: 'Nobreaks' },
   extintores: { id: 'tbld9Fhr0Mxh7BxtB', name: 'Extintores' },
   impressoras:{ id: 'tbldL456bmLcyAISx', name: 'Impressoras' },
+  areas:      { id: 'tblAsviSDOOoDWhj6', name: 'Áreas' },
 };
 
 // ─────────────────────────────────────────────
@@ -643,12 +644,43 @@ function renderRelatorio() {
 // ─────────────────────────────────────────────
 // MODAL — FORM DEFINITIONS
 // ─────────────────────────────────────────────
+
+function areaOptions(unidade, selected) {
+  const areas = (cache.areas||[])
+    .filter(r => !unidade || f(r,'Unidade')===unidade)
+    .sort((a,b) => f(a,'Sala').localeCompare(f(b,'Sala')));
+  const opts = areas.map(r => {
+    const sala = f(r,'Sala');
+    const andar = f(r,'Andar');
+    const label = andar ? `${sala} (${andar})` : sala;
+    return `<option value="${escHtml(sala)}"${sala===selected?' selected':''}>${escHtml(label)}</option>`;
+  }).join('');
+  return `<option value="">— Selecione ou digite —</option>${opts}`;
+}
+
+function localField(unidade, selected, id='f_Local') {
+  return `<select class="form-select" id="${id}" onchange="syncUnidadeFromLocal(this,'${id}')" required>
+    ${areaOptions(unidade, selected)}
+  </select>
+  <input class="form-input" id="${id}_custom" placeholder="Ou digite manualmente…" style="margin-top:6px;font-size:12px" oninput="document.getElementById('${id}').value=''">`;
+}
+
+function syncUnidadeFromLocal(sel, localId) {
+  const sala = sel.value;
+  const rec = (cache.areas||[]).find(r=>f(r,'Sala')===sala);
+  if (rec) {
+    const unid = f(rec,'Unidade');
+    const unidSel = document.getElementById('f_Unidade');
+    if (unidSel) unidSel.value = unid;
+  }
+}
+
 const FORMS = {
   predial: (rec) => {
     const fl = rec?.fields || {};
     return `
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Local *</label><input class="form-input" id="f_Local" value="${escHtml(fl['Local']||'')}" required></div>
+        <div class="form-group"><label class="form-label">Local / Sala *</label>${localField(fl['Unidade']||'', fl['Local']||'')}</div>
         <div class="form-group"><label class="form-label">Unidade</label><select class="form-select" id="f_Unidade">
           ${['ADM','Buritis','Geral'].map(o=>`<option${fl['Unidade']===o?' selected':''}>${o}</option>`).join('')}
         </select></div>
@@ -674,7 +706,7 @@ const FORMS = {
     const fl = rec?.fields || {};
     return `
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Local *</label><input class="form-input" id="f_Local" value="${escHtml(fl['Local']||'')}" required></div>
+        <div class="form-group"><label class="form-label">Local / Sala *</label>${localField(fl['Unidade']||'', fl['Local']||'')}</div>
         <div class="form-group"><label class="form-label">Unidade</label><select class="form-select" id="f_Unidade">
           ${['ADM','ADM/Apto','Buritis'].map(o=>`<option${fl['Unidade']===o?' selected':''}>${o}</option>`).join('')}
         </select></div>
@@ -801,6 +833,11 @@ async function saveRecord() {
       const el = document.getElementById('f_'+name);
       if (!el) continue;
       let val = el.value.trim();
+      // For Local field: fallback to custom input if dropdown is empty
+      if (name === 'Local' && !val) {
+        const custom = document.getElementById('f_Local_custom');
+        if (custom) val = custom.value.trim();
+      }
       if (!val) continue;
       if (DATE_FIELDS.has(name)) fields[name] = val;
       else fields[name] = val;
@@ -864,7 +901,7 @@ async function showTab(name) {
 
   if (name === 'relatorio') {
     // load all if not cached
-    const tabs = ['predial','arcond','nobreaks','extintores','impressoras'];
+    const tabs = ['predial','arcond','nobreaks','extintores','impressoras','areas'];
     await Promise.all(tabs.filter(t=>!cache[t]).map(t=>loadTable(t)));
     renderRelatorio();
     return;
@@ -889,6 +926,7 @@ function toast(msg, cls='ok-toast') {
 // INIT
 // ─────────────────────────────────────────────
 (async () => {
+  await loadTable('areas');
   const records = await loadTable('predial');
   renderPredial(records);
 })();
