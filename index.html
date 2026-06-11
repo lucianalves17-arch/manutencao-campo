@@ -405,6 +405,7 @@ const TABLES = {
   extintores: { id: 'tbld9Fhr0Mxh7BxtB', name: 'Extintores' },
   impressoras:{ id: 'tbldL456bmLcyAISx', name: 'Impressoras' },
   areas:      { id: 'tblAsviSDOOoDWhj6', name: 'Áreas' },
+  prestadores:{ id: 'tbli2Tg3KKhqCRWRl', name: 'Prestadores' },
 };
 
 // ─────────────────────────────────────────────
@@ -805,7 +806,19 @@ function localField(unidade, selected, id='f_Local') {
   <input class="form-input" id="${id}_custom" placeholder="Ou digite manualmente…" style="margin-top:6px;font-size:12px" oninput="document.getElementById('${id}').value=''">`;
 }
 
-function syncUnidadeFromLocal(sel) {
+function prestadorField(selected, id='f_Prestador') {
+  const prestadores = (cache.prestadores||[])
+    .sort((a,b) => f(a,'Prestador').localeCompare(f(b,'Prestador')));
+  let opts = `<option value="">— Selecione ou digite —</option>`;
+  prestadores.forEach(r => {
+    const nome = f(r,'Prestador');
+    const serv = f(r,'Serviço');
+    const label = serv ? `${nome} (${serv})` : nome;
+    opts += `<option value="${escHtml(nome)}"${nome===selected?' selected':''}>${escHtml(label)}</option>`;
+  });
+  return `<select class="form-select" id="${id}">${opts}</select>
+  <input class="form-input" id="${id}_custom" placeholder="Ou digite manualmente…" style="margin-top:6px;font-size:12px" oninput="document.getElementById('${id}').value=''">`;
+}
   const sala = sel.value;
   const rec = (cache.areas||[]).find(r=>f(r,'Sala')===sala);
   if (rec) {
@@ -827,7 +840,7 @@ const FORMS = {
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Intervalo</label><input class="form-input" id="f_Intervalo" value="${escHtml(fl['Intervalo']||'')}"></div>
-        <div class="form-group"><label class="form-label">Prestador</label><input class="form-input" id="f_Prestador" value="${escHtml(fl['Prestador']||'')}"></div>
+        <div class="form-group"><label class="form-label">Prestador</label>${prestadorField(fl['Prestador']||'')}</div>
       </div>
       <div class="form-group"><label class="form-label">Descrição</label><textarea class="form-textarea" id="f_Descrição">${escHtml(fl['Descrição']||'')}</textarea></div>
       <div class="form-row">
@@ -978,6 +991,11 @@ async function saveRecord() {
         const custom = document.getElementById('f_Local_custom');
         if (custom) val = custom.value.trim();
       }
+      // For Prestador field: fallback to custom input if dropdown is empty
+      if (name === 'Prestador' && !val) {
+        const custom = document.getElementById('f_Prestador_custom');
+        if (custom) val = custom.value.trim();
+      }
       if (!val) continue;
       if (DATE_FIELDS.has(name)) fields[name] = val;
       else fields[name] = val;
@@ -1041,7 +1059,7 @@ async function showTab(name) {
 
   if (name === 'relatorio') {
     // load all if not cached
-    const tabs = ['predial','arcond','nobreaks','extintores','impressoras','areas'];
+    const tabs = ['predial','arcond','nobreaks','extintores','impressoras','areas','prestadores'];
     await Promise.all(tabs.filter(t=>!cache[t]).map(t=>loadTable(t)));
     renderRelatorio();
     return;
@@ -1067,7 +1085,7 @@ function toast(msg, cls='ok-toast') {
 // ─────────────────────────────────────────────
 async function init() {
   try {
-    await loadTable('areas');
+    await Promise.all([loadTable('areas'), loadTable('prestadores')]);
     const records = await loadTable('predial');
     renderPredial(records);
   } catch(e) {
