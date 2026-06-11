@@ -190,7 +190,6 @@
   </div>
   <div class="header-right">
     <input class="search-box" type="search" id="globalSearch" placeholder="🔍 Buscar…" oninput="applySearch()">
-    <button class="btn-config" onclick="openSetup(true)" title="Configurar token">⚙️</button>
   </div>
 </header>
 
@@ -330,18 +329,16 @@
 // CONFIG
 // ─────────────────────────────────────────────
 const BASE_ID = 'app3pZJmRaLlJ2CMc';
+const PROXY = 'https://airtable-proxy.lucianalves17.workers.dev/airtable';
+let AT_TOKEN = ''; // Not needed anymore - token is in the Worker
 
-// Check URL for token parameter
+// Check URL for token parameter (kept for backwards compatibility)
 const _urlParams = new URLSearchParams(window.location.search);
 const _urlToken = _urlParams.get('token');
 if (_urlToken) {
-  localStorage.setItem('campo_at_token', _urlToken);
-  // Remove token from URL without reload
   const cleanUrl = window.location.pathname;
   window.history.replaceState({}, document.title, cleanUrl);
 }
-
-let AT_TOKEN = localStorage.getItem('campo_at_token') || '';
 
 function openSetup(force=false) {
   if (force || !AT_TOKEN) {
@@ -388,10 +385,10 @@ let editingTable = null;
 async function atFetch(path, method='GET', body=null) {
   const opts = {
     method,
-    headers: { 'Authorization': `Bearer ${AT_TOKEN}`, 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' }
   };
   if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(`https://api.airtable.com/v0/${BASE_ID}/${path}`, opts);
+  const r = await fetch(`${PROXY}/${BASE_ID}/${path}`, opts);
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
@@ -996,16 +993,11 @@ async function init() {
     const records = await loadTable('predial');
     renderPredial(records);
   } catch(e) {
-    if (e.message.includes('401') || e.message.includes('403')) {
-      localStorage.removeItem('campo_at_token');
-      AT_TOKEN = '';
-      openSetup(true);
-    }
+    toast('❌ Erro ao carregar dados: ' + e.message, 'err-toast');
   }
 }
 
-openSetup();
-if (AT_TOKEN) init();
+init();
 </script>
 </body>
 </html>
