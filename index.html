@@ -812,9 +812,7 @@ function prestadorField(selected, id='f_Prestador') {
   let opts = `<option value="">— Selecione ou digite —</option>`;
   prestadores.forEach(r => {
     const nome = f(r,'Prestador');
-    const serv = f(r,'Serviço');
-    const label = serv ? `${nome} (${serv})` : nome;
-    opts += `<option value="${escHtml(nome)}"${nome===selected?' selected':''}>${escHtml(label)}</option>`;
+    opts += `<option value="${escHtml(nome)}"${nome===selected?' selected':''}>${escHtml(nome)}</option>`;
   });
   return `<select class="form-select" id="${id}">${opts}</select>
   <input class="form-input" id="${id}_custom" placeholder="Ou digite manualmente…" style="margin-top:6px;font-size:12px" oninput="document.getElementById('${id}').value=''">`;
