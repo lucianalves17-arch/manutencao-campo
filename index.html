@@ -819,6 +819,8 @@ function prestadorField(selected, id='f_Prestador') {
   return `<select class="form-select" id="${id}">${opts}</select>
   <input class="form-input" id="${id}_custom" placeholder="Ou digite manualmente…" style="margin-top:6px;font-size:12px" oninput="document.getElementById('${id}').value=''">`;
 }
+
+function syncUnidadeFromLocal(sel) {
   const sala = sel.value;
   const rec = (cache.areas||[]).find(r=>f(r,'Sala')===sala);
   if (rec) {
