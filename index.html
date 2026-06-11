@@ -695,25 +695,38 @@ function renderRelatorio() {
 
 function areaOptions(unidade, selected) {
   const areas = (cache.areas||[])
-    .filter(r => !unidade || f(r,'Unidade')===unidade)
-    .sort((a,b) => f(a,'Sala').localeCompare(f(b,'Sala')));
-  const opts = areas.map(r => {
-    const sala = f(r,'Sala');
-    const andar = f(r,'Andar');
-    const label = andar ? `${sala} (${andar})` : sala;
-    return `<option value="${escHtml(sala)}"${sala===selected?' selected':''}>${escHtml(label)}</option>`;
-  }).join('');
-  return `<option value="">— Selecione ou digite —</option>${opts}`;
+    .sort((a,b) => f(a,'Unidade').localeCompare(f(b,'Unidade')) || f(a,'Sala').localeCompare(f(b,'Sala')));
+  
+  // Group by unidade
+  const groups = {};
+  areas.forEach(r => {
+    const u = f(r,'Unidade');
+    if (!groups[u]) groups[u] = [];
+    groups[u].push(r);
+  });
+
+  let opts = `<option value="">— Selecione ou digite —</option>`;
+  Object.keys(groups).forEach(u => {
+    opts += `<optgroup label="${u}">`;
+    groups[u].forEach(r => {
+      const sala = f(r,'Sala');
+      const andar = f(r,'Andar');
+      const label = andar ? `${sala} (${andar})` : sala;
+      opts += `<option value="${escHtml(sala)}"${sala===selected?' selected':''}>${escHtml(label)}</option>`;
+    });
+    opts += `</optgroup>`;
+  });
+  return opts;
 }
 
 function localField(unidade, selected, id='f_Local') {
-  return `<select class="form-select" id="${id}" onchange="syncUnidadeFromLocal(this,'${id}')" required>
+  return `<select class="form-select" id="${id}" onchange="syncUnidadeFromLocal(this)" required>
     ${areaOptions(unidade, selected)}
   </select>
   <input class="form-input" id="${id}_custom" placeholder="Ou digite manualmente…" style="margin-top:6px;font-size:12px" oninput="document.getElementById('${id}').value=''">`;
 }
 
-function syncUnidadeFromLocal(sel, localId) {
+function syncUnidadeFromLocal(sel) {
   const sala = sel.value;
   const rec = (cache.areas||[]).find(r=>f(r,'Sala')===sala);
   if (rec) {
