@@ -28,7 +28,7 @@
   /* HEADER */
   header { background: var(--petroleo); padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(9,71,82,0.25); }
   .header-left { display: flex; align-items: center; gap: 14px; }
-  .header-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--verde); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .header-icon { display: none; }
   .header-title { color: #fff; font-size: 17px; font-weight: 700; }
   .header-sub { color: rgba(255,255,255,0.55); font-size: 12px; }
   .header-right { display: flex; align-items: center; gap: 10px; }
@@ -37,7 +37,8 @@
   .search-box:focus { background: rgba(255,255,255,0.15); border-color: var(--verde); }
 
   /* TABS */
-  .tab-nav { background: var(--petroleo-mid); display: flex; padding: 0 28px; overflow-x: auto; border-bottom: 2px solid rgba(255,255,255,0.08); }
+  .tab-nav { background: var(--petroleo-mid); display: flex; padding: 0 28px; overflow-x: auto; border-bottom: 2px solid rgba(255,255,255,0.08); scrollbar-width: none; }
+  .tab-nav::-webkit-scrollbar { display: none; }
   .tab-btn { color: rgba(255,255,255,0.55); background: none; border: none; padding: 12px 16px; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: color .15s; display: flex; align-items: center; gap: 6px; }
   .tab-btn:hover { color: rgba(255,255,255,0.85); }
   .tab-btn.active { color: var(--verde); border-bottom-color: var(--verde); }
@@ -167,7 +168,7 @@
 
 <header>
   <div class="header-left">
-    <div class="header-icon">🔧</div>
+    <img src="data:image/png;base64,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" alt="Campo Incorporadora" style="height:44px;width:auto;display:block;flex-shrink:0">
     <div>
       <div class="header-title">Painel de Manutenção</div>
       <div class="header-sub">ADM · Buritis · Controladoria — Campo Incorporadora</div>
@@ -424,13 +425,13 @@ function renderPredial(records) {
     const txt = [f(r,'Local'),f(r,'Descrição'),f(r,'Prestador'),f(r,'Unidade')].join(' ').toLowerCase();
     const hide = (filt && f(r,'Unidade')!==filt) || (q && !txt.includes(q));
     return `<tr class="data-row${hide?' hidden-row':''}" data-id="${r.id}" data-txt="${escHtml(txt)}">
-      <td><strong>${escHtml(f(r,'Local'))}</strong><br><small style="color:var(--text-muted)">${escHtml(f(r,'Unidade'))}</small></td>
+      <td><button class="btn-edit" onclick="openModal('predial','${r.id}')">✏️</button><button class="btn-del" onclick="delRecord('predial','${r.id}')">🗑️</button><br><strong>${escHtml(f(r,'Local'))}</strong><br><small style="color:var(--text-muted)">${escHtml(f(r,'Unidade'))}</small></td>
       <td style="font-size:12px">${escHtml(f(r,'Descrição'))}</td>
       <td><span class="badge neutral">${escHtml(f(r,'Intervalo')||'—')}</span></td>
       <td>${fmtDate(f(r,'Última Manutenção'))}</td>
       <td>${fmtDate(f(r,'Próxima Manutenção'))}</td>
       <td>${escHtml(f(r,'Prestador'))}</td>
-      <td>${badge(st, lbl)}<br><button class="btn-edit" style="margin-top:4px" onclick="openModal('predial','${r.id}')">✏️ Editar</button><button class="btn-del" onclick="delRecord('predial','${r.id}')">🗑️</button></td>
+      <td>${badge(st, lbl)}</td>
     </tr>`;
   }).join('');
 
@@ -462,13 +463,13 @@ function renderArcond(records) {
     const hide = (filt && f(r,'Unidade')!==filt) || (q && !txt.includes(q));
     const obs = f(r,'Observação');
     return `<tr class="data-row${hide?' hidden-row':''}" data-id="${r.id}" data-txt="${escHtml(txt)}">
-      <td><strong>${escHtml(f(r,'Local'))}</strong>${obs?`<br><small style="color:var(--late)">${escHtml(obs)}</small>`:''}</td>
+      <td><button class="btn-edit" onclick="openModal('arcond','${r.id}')">✏️</button><button class="btn-del" onclick="delRecord('arcond','${r.id}')">🗑️</button><br><strong>${escHtml(f(r,'Local'))}</strong>${obs?`<br><small style="color:var(--late)">${escHtml(obs)}</small>`:''}</td>
       <td><span class="badge neutral">${escHtml(f(r,'Unidade'))}</span></td>
       <td>${escHtml(f(r,'Marca'))}</td>
       <td>${escHtml(f(r,'BTUs'))}</td>
       <td>${escHtml(f(r,'Última Manutenção')||'—')}</td>
       <td>${fmtDate(f(r,'Próxima Manutenção'))}</td>
-      <td>${badge(st,lbl)}<br><button class="btn-edit" style="margin-top:4px" onclick="openModal('arcond','${r.id}')">✏️ Editar</button><button class="btn-del" onclick="delRecord('arcond','${r.id}')">🗑️</button></td>
+      <td>${badge(st,lbl)}</td>
     </tr>`;
   }).join('');
 
@@ -498,14 +499,14 @@ function renderNobreaks(records) {
     const txt = [f(r,'ID'),f(r,'Sala'),f(r,'Equipamento'),f(r,'Unidade'),f(r,'Observação')].join(' ').toLowerCase();
     const hide = (filt && f(r,'Unidade')!==filt) || (q && !txt.includes(q));
     return `<tr class="data-row${hide?' hidden-row':''}" data-id="${r.id}" data-txt="${escHtml(txt)}">
-      <td><strong>${escHtml(f(r,'ID'))}</strong></td>
+      <td><button class="btn-edit" onclick="openModal('nobreaks','${r.id}')">✏️</button><button class="btn-del" onclick="delRecord('nobreaks','${r.id}')">🗑️</button><br><strong>${escHtml(f(r,'ID'))}</strong></td>
       <td><span class="badge neutral">${escHtml(f(r,'Unidade'))}</span></td>
       <td>${escHtml(f(r,'Sala'))}</td>
       <td>${escHtml(f(r,'Equipamento'))}</td>
       <td>${fmtDate(f(r,'Última Manutenção'))}</td>
       <td>${fmtDate(f(r,'Próximo Teste'))}</td>
       <td style="font-size:12px;color:var(--text-muted)">${escHtml(f(r,'Observação')||'—')}</td>
-      <td>${badge(st, f(r,'Status')||'—')}<br><button class="btn-edit" style="margin-top:4px" onclick="openModal('nobreaks','${r.id}')">✏️ Editar</button><button class="btn-del" onclick="delRecord('nobreaks','${r.id}')">🗑️</button></td>
+      <td>${badge(st, f(r,'Status')||'—')}</td>
     </tr>`;
   }).join('');
 
@@ -528,7 +529,7 @@ function renderExtintores(records) {
     const txt = [f(r,'Local'),f(r,'Tipo'),f(r,'Uso')].join(' ').toLowerCase();
     const hide = q && !txt.includes(q);
     return `<tr class="data-row${hide?' hidden-row':''}" data-id="${r.id}" data-txt="${escHtml(txt)}">
-      <td><strong>${escHtml(f(r,'Local'))}</strong></td>
+      <td><button class="btn-edit" onclick="openModal('extintores','${r.id}')">✏️</button><button class="btn-del" onclick="delRecord('extintores','${r.id}')">🗑️</button><br><strong>${escHtml(f(r,'Local'))}</strong></td>
       <td>${escHtml(f(r,'Tipo'))}</td>
       <td style="font-size:12px">${escHtml(f(r,'Uso'))}</td>
       <td>${escHtml(f(r,'Quantidade'))}</td>
@@ -536,7 +537,7 @@ function renderExtintores(records) {
       <td>${fmtDate(f(r,'Última Troca'))}</td>
       <td>${fmtDate(f(r,'Próxima Troca'))}</td>
       <td>${escHtml(f(r,'Valor Unitário'))}</td>
-      <td>${badge('ok','OK')}<br><button class="btn-edit" style="margin-top:4px" onclick="openModal('extintores','${r.id}')">✏️ Editar</button><button class="btn-del" onclick="delRecord('extintores','${r.id}')">🗑️</button></td>
+      <td>${badge('ok','OK')}</td>
     </tr>`;
   }).join('');
 
@@ -563,14 +564,14 @@ function renderImpressoras(records) {
     const hide = (filt && f(r,'Unidade')!==filt) || (q && !txt.includes(q));
     const locBadge = f(r,'Locada')==='Sim' ? badge('ok','Locada') : `<span class="badge neutral">Própria</span>`;
     return `<tr class="data-row${hide?' hidden-row':''}" data-id="${r.id}" data-txt="${escHtml(txt)}">
-      <td><strong>${escHtml(f(r,'Sala'))}</strong></td>
+      <td><button class="btn-edit" onclick="openModal('impressoras','${r.id}')">✏️</button><button class="btn-del" onclick="delRecord('impressoras','${r.id}')">🗑️</button><br><strong>${escHtml(f(r,'Sala'))}</strong></td>
       <td><span class="badge neutral">${escHtml(f(r,'Unidade'))}</span></td>
       <td style="font-size:12px">${escHtml(f(r,'Modelo'))}</td>
       <td>${escHtml(f(r,'Marca'))}</td>
       <td>${locBadge}</td>
       <td>${escHtml(f(r,'Empresa')||'—')}</td>
       <td>${escHtml(f(r,'Valor Locação')||'—')}</td>
-      <td style="font-size:12px;color:var(--text-muted)">${escHtml(f(r,'Observação')||'—')}<br><button class="btn-edit" style="margin-top:4px" onclick="openModal('impressoras','${r.id}')">✏️ Editar</button><button class="btn-del" onclick="delRecord('impressoras','${r.id}')">🗑️</button></td>
+      <td style="font-size:12px;color:var(--text-muted)">${escHtml(f(r,'Observação')||'—')}</td>
     </tr>`;
   }).join('');
 
@@ -792,26 +793,28 @@ function closeModalOutside(e) {
 async function saveRecord() {
   const btn = document.getElementById('btnSave');
   btn.disabled = true; btn.textContent = 'Salvando…';
+  const tableKey = editingTable;
+  const recordId = editingId;
   try {
     const fields = {};
-    for (const name of FIELDS[editingTable]) {
+    for (const name of FIELDS[tableKey]) {
       const el = document.getElementById('f_'+name);
       if (!el) continue;
       let val = el.value.trim();
       if (!val) continue;
-      if (DATE_FIELDS.has(name)) fields[name] = val; // already YYYY-MM-DD
+      if (DATE_FIELDS.has(name)) fields[name] = val;
       else fields[name] = val;
     }
-    if (editingId) {
-      await updateRecord(editingTable, editingId, fields);
+    if (recordId) {
+      await updateRecord(tableKey, recordId, fields);
       toast('✅ Atualizado com sucesso!', 'ok-toast');
     } else {
-      await createRecord(editingTable, fields);
+      await createRecord(tableKey, fields);
       toast('✅ Criado com sucesso!', 'ok-toast');
     }
     closeModal();
-    const records = await loadTable(editingTable);
-    renderTable(editingTable, records);
+    const records = await loadTable(tableKey);
+    renderTable(tableKey, records);
   } catch(e) {
     toast('❌ Erro ao salvar: ' + e.message, 'err-toast');
   }
