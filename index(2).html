@@ -28,13 +28,27 @@
   /* HEADER */
   header { background: var(--petroleo); padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(9,71,82,0.25); }
   .header-left { display: flex; align-items: center; gap: 14px; }
-  .header-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--verde); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .header-icon { display: none; }
   .header-title { color: #fff; font-size: 17px; font-weight: 700; }
   .header-sub { color: rgba(255,255,255,0.55); font-size: 12px; }
   .header-right { display: flex; align-items: center; gap: 10px; }
   .search-box { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 7px; padding: 7px 12px; color: #fff; font-size: 13px; outline: none; width: 200px; }
   .search-box::placeholder { color: rgba(255,255,255,0.4); }
   .search-box:focus { background: rgba(255,255,255,0.15); border-color: var(--verde); }
+  .setup-overlay { display: none; position: fixed; inset: 0; background: var(--petroleo); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+  .setup-overlay.open { display: flex; }
+  .setup-box { background: #fff; border-radius: 16px; padding: 36px; max-width: 480px; width: 100%; box-shadow: 0 8px 40px rgba(0,0,0,0.2); }
+  .setup-title { font-size: 20px; font-weight: 700; color: var(--petroleo); margin-bottom: 8px; }
+  .setup-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.6; }
+  .setup-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; display: block; }
+  .setup-input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-family: monospace; outline: none; color: var(--text); }
+  .setup-input:focus { border-color: var(--petroleo); }
+  .setup-btn { width: 100%; margin-top: 16px; background: var(--petroleo); color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .setup-btn:hover { background: var(--petroleo-mid); }
+  .setup-hint { margin-top: 14px; font-size: 11px; color: var(--text-muted); text-align: center; }
+  .setup-hint a { color: var(--petroleo); }
+  .btn-config { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; padding: 6px 12px; color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer; }
+  .btn-config:hover { background: rgba(255,255,255,0.2); color: #fff; }
 
   /* TABS */
   .tab-nav { background: var(--petroleo-mid); display: flex; padding: 0 28px; overflow-x: auto; border-bottom: 2px solid rgba(255,255,255,0.08); scrollbar-width: none; }
@@ -176,6 +190,7 @@
   </div>
   <div class="header-right">
     <input class="search-box" type="search" id="globalSearch" placeholder="🔍 Buscar…" oninput="applySearch()">
+    <button class="btn-config" onclick="openSetup(true)" title="Configurar token">⚙️</button>
   </div>
 </header>
 
@@ -280,6 +295,18 @@
 
 <footer>Campo Incorporadora · Setor de Manutenção · ADM &amp; Buritis</footer>
 
+<!-- TOKEN SETUP -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-box">
+    <div class="setup-title">🔧 Painel de Manutenção</div>
+    <div class="setup-sub">Para acessar o painel, insira o seu <strong>Airtable Personal Access Token</strong>. Ele será salvo no seu navegador e não precisará ser inserido novamente.</div>
+    <label class="setup-label">Token de acesso</label>
+    <input class="setup-input" id="setupToken" type="password" placeholder="patXXXXXXXXXXXXXX.xxxxxxxx…">
+    <button class="setup-btn" onclick="saveToken()">Entrar no painel</button>
+    <div class="setup-hint">Gere seu token em <a href="https://airtable.com/create/tokens" target="_blank">airtable.com/create/tokens</a><br>Permissões necessárias: <code>data.records:read</code> e <code>data.records:write</code></div>
+  </div>
+</div>
+
 <!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal">
@@ -302,8 +329,29 @@
 // ─────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────
-const AT_TOKEN = 'patFVOsjBq3L8x4lN.871dad234f17871828ac6f63d68e7c7fc5f97ebdd5515207aba0e1eff3421c3e';
-const BASE_ID  = 'app3pZJmRaLlJ2CMc';
+const BASE_ID = 'app3pZJmRaLlJ2CMc';
+let AT_TOKEN = localStorage.getItem('campo_at_token') || '';
+
+function openSetup(force=false) {
+  if (force || !AT_TOKEN) {
+    document.getElementById('setupOverlay').classList.add('open');
+    if (AT_TOKEN) document.getElementById('setupToken').value = AT_TOKEN;
+  }
+}
+
+function saveToken() {
+  const val = document.getElementById('setupToken').value.trim();
+  if (!val || !val.startsWith('pat')) {
+    alert('Token inválido. Deve começar com "pat".');
+    return;
+  }
+  AT_TOKEN = val;
+  localStorage.setItem('campo_at_token', val);
+  document.getElementById('setupOverlay').classList.remove('open');
+  // reload
+  Object.keys(cache).forEach(k => delete cache[k]);
+  init();
+}
 
 const TABLES = {
   predial:    { id: 'tbl9PyGXNBoOy7MKG', name: 'Predial' },
@@ -311,6 +359,7 @@ const TABLES = {
   nobreaks:   { id: 'tblmX5sQdc0xDaGCG', name: 'Nobreaks' },
   extintores: { id: 'tbld9Fhr0Mxh7BxtB', name: 'Extintores' },
   impressoras:{ id: 'tbldL456bmLcyAISx', name: 'Impressoras' },
+  areas:      { id: 'tblAsviSDOOoDWhj6', name: 'Áreas' },
 };
 
 // ─────────────────────────────────────────────
@@ -643,12 +692,43 @@ function renderRelatorio() {
 // ─────────────────────────────────────────────
 // MODAL — FORM DEFINITIONS
 // ─────────────────────────────────────────────
+
+function areaOptions(unidade, selected) {
+  const areas = (cache.areas||[])
+    .filter(r => !unidade || f(r,'Unidade')===unidade)
+    .sort((a,b) => f(a,'Sala').localeCompare(f(b,'Sala')));
+  const opts = areas.map(r => {
+    const sala = f(r,'Sala');
+    const andar = f(r,'Andar');
+    const label = andar ? `${sala} (${andar})` : sala;
+    return `<option value="${escHtml(sala)}"${sala===selected?' selected':''}>${escHtml(label)}</option>`;
+  }).join('');
+  return `<option value="">— Selecione ou digite —</option>${opts}`;
+}
+
+function localField(unidade, selected, id='f_Local') {
+  return `<select class="form-select" id="${id}" onchange="syncUnidadeFromLocal(this,'${id}')" required>
+    ${areaOptions(unidade, selected)}
+  </select>
+  <input class="form-input" id="${id}_custom" placeholder="Ou digite manualmente…" style="margin-top:6px;font-size:12px" oninput="document.getElementById('${id}').value=''">`;
+}
+
+function syncUnidadeFromLocal(sel, localId) {
+  const sala = sel.value;
+  const rec = (cache.areas||[]).find(r=>f(r,'Sala')===sala);
+  if (rec) {
+    const unid = f(rec,'Unidade');
+    const unidSel = document.getElementById('f_Unidade');
+    if (unidSel) unidSel.value = unid;
+  }
+}
+
 const FORMS = {
   predial: (rec) => {
     const fl = rec?.fields || {};
     return `
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Local *</label><input class="form-input" id="f_Local" value="${escHtml(fl['Local']||'')}" required></div>
+        <div class="form-group"><label class="form-label">Local / Sala *</label>${localField(fl['Unidade']||'', fl['Local']||'')}</div>
         <div class="form-group"><label class="form-label">Unidade</label><select class="form-select" id="f_Unidade">
           ${['ADM','Buritis','Geral'].map(o=>`<option${fl['Unidade']===o?' selected':''}>${o}</option>`).join('')}
         </select></div>
@@ -674,7 +754,7 @@ const FORMS = {
     const fl = rec?.fields || {};
     return `
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Local *</label><input class="form-input" id="f_Local" value="${escHtml(fl['Local']||'')}" required></div>
+        <div class="form-group"><label class="form-label">Local / Sala *</label>${localField(fl['Unidade']||'', fl['Local']||'')}</div>
         <div class="form-group"><label class="form-label">Unidade</label><select class="form-select" id="f_Unidade">
           ${['ADM','ADM/Apto','Buritis'].map(o=>`<option${fl['Unidade']===o?' selected':''}>${o}</option>`).join('')}
         </select></div>
@@ -801,6 +881,11 @@ async function saveRecord() {
       const el = document.getElementById('f_'+name);
       if (!el) continue;
       let val = el.value.trim();
+      // For Local field: fallback to custom input if dropdown is empty
+      if (name === 'Local' && !val) {
+        const custom = document.getElementById('f_Local_custom');
+        if (custom) val = custom.value.trim();
+      }
       if (!val) continue;
       if (DATE_FIELDS.has(name)) fields[name] = val;
       else fields[name] = val;
@@ -864,7 +949,7 @@ async function showTab(name) {
 
   if (name === 'relatorio') {
     // load all if not cached
-    const tabs = ['predial','arcond','nobreaks','extintores','impressoras'];
+    const tabs = ['predial','arcond','nobreaks','extintores','impressoras','areas'];
     await Promise.all(tabs.filter(t=>!cache[t]).map(t=>loadTable(t)));
     renderRelatorio();
     return;
@@ -888,10 +973,22 @@ function toast(msg, cls='ok-toast') {
 // ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
-(async () => {
-  const records = await loadTable('predial');
-  renderPredial(records);
-})();
+async function init() {
+  try {
+    await loadTable('areas');
+    const records = await loadTable('predial');
+    renderPredial(records);
+  } catch(e) {
+    if (e.message.includes('401') || e.message.includes('403')) {
+      localStorage.removeItem('campo_at_token');
+      AT_TOKEN = '';
+      openSetup(true);
+    }
+  }
+}
+
+openSetup();
+if (AT_TOKEN) init();
 </script>
 </body>
 </html>
