@@ -330,6 +330,17 @@
 // CONFIG
 // ─────────────────────────────────────────────
 const BASE_ID = 'app3pZJmRaLlJ2CMc';
+
+// Check URL for token parameter
+const _urlParams = new URLSearchParams(window.location.search);
+const _urlToken = _urlParams.get('token');
+if (_urlToken) {
+  localStorage.setItem('campo_at_token', _urlToken);
+  // Remove token from URL without reload
+  const cleanUrl = window.location.pathname;
+  window.history.replaceState({}, document.title, cleanUrl);
+}
+
 let AT_TOKEN = localStorage.getItem('campo_at_token') || '';
 
 function openSetup(force=false) {
