@@ -162,6 +162,39 @@
   .rel-item-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
   .rel-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); }
 
+  /* AGENDA */
+  .agenda-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+  .agenda-title { font-size: 18px; font-weight: 700; color: var(--petroleo); }
+  .agenda-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .agenda-nav { display: flex; align-items: center; gap: 8px; }
+  .agenda-nav-btn { background: var(--card); border: 1px solid var(--border); border-radius: 7px; padding: 6px 12px; font-size: 13px; cursor: pointer; color: var(--petroleo); font-weight: 600; transition: all .15s; }
+  .agenda-nav-btn:hover { background: var(--petroleo); color: #fff; border-color: var(--petroleo); }
+  .agenda-month-label { font-size: 14px; font-weight: 700; color: var(--petroleo); min-width: 140px; text-align: center; }
+  .agenda-grid { display: flex; flex-direction: column; gap: 20px; }
+  .agenda-month { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .agenda-month-header { background: var(--petroleo); color: #fff; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; }
+  .agenda-month-name { font-size: 15px; font-weight: 700; }
+  .agenda-month-count { font-size: 12px; background: rgba(255,255,255,0.15); padding: 2px 10px; border-radius: 20px; }
+  .agenda-month-body { padding: 0; }
+  .agenda-item { display: flex; align-items: center; gap: 14px; padding: 11px 18px; border-bottom: 1px solid var(--border); transition: background .1s; }
+  .agenda-item:last-child { border-bottom: none; }
+  .agenda-item:hover { background: var(--petroleo-light); }
+  .agenda-item.late { border-left: 3px solid var(--late); }
+  .agenda-item.warn-soon { border-left: 3px solid var(--warn); }
+  .agenda-item.ok { border-left: 3px solid var(--ok); }
+  .agenda-date-box { min-width: 52px; text-align: center; background: var(--petroleo-light); border-radius: 8px; padding: 6px 4px; flex-shrink: 0; }
+  .agenda-date-day { font-size: 18px; font-weight: 700; color: var(--petroleo); line-height: 1; }
+  .agenda-date-month { font-size: 10px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; }
+  .agenda-item.late .agenda-date-box { background: var(--late-bg); }
+  .agenda-item.late .agenda-date-day { color: var(--late); }
+  .agenda-item.warn-soon .agenda-date-box { background: var(--warn-bg); }
+  .agenda-item.warn-soon .agenda-date-day { color: var(--warn); }
+  .agenda-item-info { flex: 1; }
+  .agenda-item-name { font-weight: 600; font-size: 13px; color: var(--petroleo); }
+  .agenda-item-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .agenda-item-right { text-align: right; flex-shrink: 0; }
+  .agenda-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
   /* ALERT BAR */
   .alert-bar { display: none; background: #fff8ed; border-bottom: 2px solid var(--warn); padding: 10px 28px; gap: 12px; flex-wrap: wrap; align-items: center; }
   .alert-bar.visible { display: flex; }
@@ -219,6 +252,7 @@
   <button class="tab-btn" onclick="showTab('extintores')" id="tab-extintores">🧯 Extintores <span class="tab-count" id="cnt-extintores">…</span></button>
   <button class="tab-btn" onclick="showTab('impressoras')" id="tab-impressoras">🖨️ Impressoras <span class="tab-count" id="cnt-impressoras">…</span></button>
   <button class="tab-btn" onclick="showTab('relatorio')" id="tab-relatorio">📋 Relatório</button>
+  <button class="tab-btn" onclick="showTab('agenda')" id="tab-agenda">📅 Agenda</button>
 </div>
 
 <main>
@@ -354,6 +388,29 @@
       <div id="rel-valores-detalhe"></div>
     </div>
   </div>
+  <!-- AGENDA -->
+  <div class="section" id="sec-agenda">
+    <div class="agenda-header">
+      <div>
+        <div class="agenda-title">📅 Agenda de Manutenções</div>
+        <div class="agenda-subtitle" id="agenda-subtitle">Próximos 3 meses — planejamento de manutenções</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <div class="filter-row" id="filter-agenda" style="margin-bottom:0">
+          <span class="pill active" onclick="setAgendaFiltro(this,'')">Todas unidades</span>
+          <span class="pill" onclick="setAgendaFiltro(this,'ADM')">ADM</span>
+          <span class="pill" onclick="setAgendaFiltro(this,'Buritis')">Buritis</span>
+        </div>
+        <div class="agenda-nav">
+          <button class="agenda-nav-btn" onclick="shiftAgenda(-1)">◀ Anterior</button>
+          <span class="agenda-month-label" id="agenda-range"></span>
+          <button class="agenda-nav-btn" onclick="shiftAgenda(1)">Próximo ▶</button>
+        </div>
+      </div>
+    </div>
+    <div class="agenda-grid" id="agenda-grid"></div>
+  </div>
+
 </main>
 
 <footer>Campo Incorporadora · Setor de Manutenção · ADM &amp; Buritis</footer>
@@ -1146,6 +1203,12 @@ async function showTab(name) {
     renderRelatorio();
     return;
   }
+  if (name === 'agenda') {
+    const tabs = ['predial','arcond','nobreaks','extintores'];
+    await Promise.all(tabs.filter(t=>!cache[t]).map(t=>loadTable(t)));
+    renderAgenda();
+    return;
+  }
   if (!cache[name]) {
     const records = await loadTable(name);
     renderTable(name, records);
@@ -1160,6 +1223,104 @@ function toast(msg, cls='ok-toast') {
   el.textContent = msg;
   el.className = 'toast '+cls+' show';
   setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+// ─────────────────────────────────────────────
+// AGENDA
+// ─────────────────────────────────────────────
+let agendaOffset = 0; // months offset from today
+let agendaFiltro = '';
+const MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MESES_PT_CURTO = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+function setAgendaFiltro(el, val) {
+  agendaFiltro = val;
+  document.querySelectorAll('#filter-agenda .pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  renderAgenda();
+}
+
+function shiftAgenda(dir) {
+  agendaOffset += dir;
+  renderAgenda();
+}
+
+function renderAgenda() {
+  const now = new Date();
+  const startMonth = new Date(now.getFullYear(), now.getMonth() + agendaOffset, 1);
+
+  // Update range label
+  const endMonth = new Date(startMonth.getFullYear(), startMonth.getMonth() + 2, 1);
+  document.getElementById('agenda-range').textContent =
+    `${MESES_PT_CURTO[startMonth.getMonth()]}/${startMonth.getFullYear()} — ${MESES_PT_CURTO[endMonth.getMonth()]}/${endMonth.getFullYear()}`;
+
+  // Collect all items with dates
+  const allItems = [];
+
+  function addItem(dateStr, nome, cat, catIcon, unidade, prestador, desc) {
+    if (!dateStr) return;
+    const d = new Date(dateStr);
+    if (isNaN(d)) return;
+    if (agendaFiltro && unidade !== agendaFiltro) return;
+    allItems.push({ date: d, nome, cat, catIcon, unidade, prestador, desc });
+  }
+
+  (cache.predial||[]).forEach(r => addItem(f(r,'Próxima Manutenção'), f(r,'Local'), 'Predial', '🏢', f(r,'Unidade'), f(r,'Prestador'), f(r,'Descrição')));
+  (cache.arcond||[]).forEach(r => addItem(f(r,'Próxima Manutenção'), f(r,'Local'), 'Ar-Condicionado', '❄️', f(r,'Unidade'), '—', f(r,'Marca')+' · '+f(r,'BTUs')));
+  (cache.nobreaks||[]).forEach(r => addItem(f(r,'Próximo Teste'), f(r,'ID')+' — '+f(r,'Sala'), 'Nobreak', '🔋', f(r,'Unidade'), '—', f(r,'Equipamento')));
+  (cache.extintores||[]).forEach(r => addItem(f(r,'Próxima Troca'), f(r,'Local'), 'Extintor', '🧯', 'Geral', 'Pacholski', f(r,'Tipo')));
+
+  // Group by month (3 months starting from offset)
+  const grid = document.getElementById('agenda-grid');
+  let html = '';
+
+  for (let m = 0; m < 3; m++) {
+    const monthDate = new Date(startMonth.getFullYear(), startMonth.getMonth() + m, 1);
+    const monthEnd  = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+    const monthItems = allItems
+      .filter(i => i.date >= new Date(monthDate.getFullYear(), monthDate.getMonth(), 1) &&
+                   i.date <= new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0))
+      .sort((a,b) => a.date - b.date);
+
+    const isCurrentMonth = monthDate.getMonth() === now.getMonth() && monthDate.getFullYear() === now.getFullYear();
+    const monthLabel = `${MESES_PT[monthDate.getMonth()]} ${monthDate.getFullYear()}`;
+
+    const itemsHtml = monthItems.length === 0
+      ? `<div class="agenda-empty">Nenhuma manutenção prevista</div>`
+      : monthItems.map(i => {
+          const diff = Math.ceil((i.date - now) / 86400000);
+          const cls = diff < 0 ? 'late' : diff <= 15 ? 'warn-soon' : 'ok';
+          const dayNum = i.date.getDate().toString().padStart(2,'0');
+          const monthShort = MESES_PT_CURTO[i.date.getMonth()];
+          const diffLabel = diff < 0 ? `${Math.abs(diff)}d atrás` : diff === 0 ? 'hoje' : `em ${diff}d`;
+          return `<div class="agenda-item ${cls}">
+            <div class="agenda-date-box">
+              <div class="agenda-date-day">${dayNum}</div>
+              <div class="agenda-date-month">${monthShort}</div>
+            </div>
+            <div class="agenda-item-info">
+              <div class="agenda-item-name">${escHtml(i.nome)}</div>
+              <div class="agenda-item-meta">
+                <span>${i.catIcon} ${i.cat}</span>
+                ${i.unidade ? `<span>📍 ${escHtml(i.unidade)}</span>` : ''}
+                ${i.prestador && i.prestador !== '—' ? `<span>👤 ${escHtml(i.prestador)}</span>` : ''}
+                ${i.desc ? `<span style="color:var(--text-muted)">${escHtml(i.desc)}</span>` : ''}
+              </div>
+            </div>
+            <div class="agenda-item-right">${badge(diff<0?'late':diff<=15?'warn':'ok', diffLabel)}</div>
+          </div>`;
+        }).join('');
+
+    html += `<div class="agenda-month">
+      <div class="agenda-month-header">
+        <span class="agenda-month-name">${isCurrentMonth ? '📍 ' : ''}${monthLabel}</span>
+        <span class="agenda-month-count">${monthItems.length} manutenção(ões)</span>
+      </div>
+      <div class="agenda-month-body">${itemsHtml}</div>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
 }
 
 // ─────────────────────────────────────────────
